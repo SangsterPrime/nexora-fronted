@@ -49,18 +49,54 @@
   color: rgba(245, 245, 240, 0.54);
 }
 
-.app-layout__demo-badge {
-  padding: 0.62rem 0.75rem;
-  border: 1px solid rgba(255, 54, 211, 0.2);
+.app-layout__user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(245, 245, 240, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.app-layout__user-card img,
+.app-layout__user-avatar {
+  width: 2.45rem;
+  height: 2.45rem;
+  flex: 0 0 auto;
   border-radius: 999px;
-  color: #ff8fe7;
-  background: rgba(255, 54, 211, 0.055);
+}
+
+.app-layout__user-card img {
+  object-fit: cover;
+}
+
+.app-layout__user-avatar {
+  display: grid;
+  place-items: center;
+  color: #061006;
+  background: var(--green);
   font-family: var(--font-mono);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-align: center;
+  font-weight: 900;
   text-transform: uppercase;
+}
+
+.app-layout__user-card strong,
+.app-layout__user-card span {
+  display: block;
+}
+
+.app-layout__user-card strong {
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.app-layout__user-card span {
+  margin-top: 0.2rem;
+  color: rgba(245, 245, 240, 0.56);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 .app-layout__nav {
@@ -69,7 +105,8 @@
 }
 
 .app-layout__nav-link,
-.app-layout__return {
+.app-layout__return,
+.app-layout__logout {
   border: 1px solid rgba(245, 245, 240, 0.09);
   border-radius: 0.95rem;
   color: rgba(245, 245, 240, 0.68);
@@ -92,9 +129,26 @@
 }
 
 .app-layout__return {
-  margin-top: auto;
   padding: 0.82rem 0.9rem;
   color: rgba(0, 240, 255, 0.82);
+}
+
+.app-layout__logout {
+  margin-top: auto;
+  padding: 0.82rem 0.9rem;
+  color: #ff8fe7;
+  background: rgba(255, 54, 211, 0.055);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.app-layout__logout:hover,
+.app-layout__logout:focus-visible {
+  border-color: rgba(255, 54, 211, 0.28);
 }
 
 .app-layout__main {
@@ -252,7 +306,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .app-layout__nav-link,
-  .app-layout__return {
+  .app-layout__return,
+  .app-layout__logout {
     transition: none;
   }
 

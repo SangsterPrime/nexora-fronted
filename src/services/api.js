@@ -31,6 +31,7 @@ async function apiRequest(path, options = {}) {
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...fetchOptions,
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
         ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
