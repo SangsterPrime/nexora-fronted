@@ -10,7 +10,7 @@ function SolutionSection() {
         <div className="solution-section__shell">
           <div className="row align-items-center g-4 g-lg-5">
             <div className="col-12 col-lg-5">
-              <p className="solution-section__eyebrow">La solución</p>
+              <p className="solution-section__eyebrow">LA SOLUCIÓN</p>
               <h2 className="solution-section__title">NEXORA CENTRALIZA EL CICLO COMPLETO.</h2>
             </div>
             <div className="col-12 col-lg-7">

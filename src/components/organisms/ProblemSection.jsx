@@ -25,7 +25,7 @@ function ProblemSection() {
       <div className="container">
         <div className="row align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="problem-section__eyebrow">El punto de dolor</p>
+            <p className="problem-section__eyebrow">EL PROBLEMA</p>
             <h2 className="problem-section__title">
               EL PROBLEMA NO ES COMPRAR.
               <span>ES CONTROLAR EL CAOS.</span>
@@ -33,7 +33,7 @@ function ProblemSection() {
           </div>
           <div className="col-12 col-lg-5">
             <p className="problem-section__intro">
-              En muchas organizaciones, las solicitudes se pierden en correos, los proveedores viven en planillas, las cotizaciones son difíciles de comparar y las decisiones quedan sin trazabilidad.
+              En muchas organizaciones, las solicitudes se pierden entre correos, los proveedores viven en planillas, las cotizaciones son difíciles de comparar y las decisiones quedan sin trazabilidad.
             </p>
           </div>
         </div>

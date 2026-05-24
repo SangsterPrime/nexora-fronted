@@ -25,18 +25,26 @@ const trustItems = [
   'Preparado para escalar módulos',
 ]
 
+const nextPhaseModules = [
+  '/app',
+  '/app/proveedores',
+  '/app/solicitudes',
+  '/app/cotizaciones',
+  '/app/pipelines',
+]
+
 function ArchitectureSection() {
   return (
     <section className="architecture-section" id="arquitectura">
       <div className="container">
         <div className="row justify-content-between align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="architecture-section__eyebrow">Arquitectura</p>
-            <h2 className="architecture-section__title">ARQUITECTURA LISTA PARA ESCALAR.</h2>
+            <p className="architecture-section__eyebrow">ARQUITECTURA</p>
+            <h2 className="architecture-section__title">ARQUITECTURA PREPARADA PARA CRECER.</h2>
           </div>
           <div className="col-12 col-lg-4">
             <p className="architecture-section__intro">
-              La capa técnica vive debajo de la experiencia comercial: UI modular, API REST y persistencia preparadas para crecer sin rehacer el producto.
+              NEXORA separa frontend, backend y base de datos para facilitar mantenimiento, despliegue y evolución del producto.
             </p>
           </div>
         </div>
@@ -57,6 +65,18 @@ function ArchitectureSection() {
           {trustItems.map((item) => (
             <span key={item}>{item}</span>
           ))}
+        </div>
+
+        <div className="architecture-section__roadmap" aria-label="Estructura preparada para fase dos">
+          <div>
+            <p className="architecture-section__roadmap-label">Fase 2 preparada</p>
+            <h3>Landing pública hoy. Aplicación interna después.</h3>
+          </div>
+          <div className="architecture-section__roadmap-list">
+            {nextPhaseModules.map((modulePath) => (
+              <code key={modulePath}>{modulePath}</code>
+            ))}
+          </div>
         </div>
       </div>
     </section>

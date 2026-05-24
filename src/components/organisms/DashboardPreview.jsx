@@ -24,15 +24,15 @@ const demoSolicitudes = [
   {
     id: 'REQ-1029',
     titulo: 'Servicios de mantenimiento',
-    categoria: 'Facilities',
+    categoria: 'Instalaciones',
     montoEstimado: 12850,
     estado: 'NEGOCIACION',
   },
 ]
 
 const demoPipelines = [
-  { id: 'PIPE-01', nombre: 'Aprobación de solicitud', tipo: 'Workflow', activo: true },
-  { id: 'PIPE-02', nombre: 'Comparación de cotizaciones', tipo: 'Scoring', activo: true },
+  { id: 'PIPE-01', nombre: 'Aprobación de solicitud', tipo: 'Flujo operativo', activo: true },
+  { id: 'PIPE-02', nombre: 'Comparación de cotizaciones', tipo: 'Evaluación', activo: true },
   { id: 'PIPE-03', nombre: 'Emisión de orden', tipo: 'Automatización', activo: false },
 ]
 
@@ -138,15 +138,15 @@ function DashboardPreview() {
         <div className="dashboard-preview__shell">
           <div className="row align-items-end g-4 mb-4 mb-lg-5">
             <div className="col-12 col-lg-7">
-              <p className="dashboard-preview__eyebrow">Vista previa del Command Center</p>
-              <h2 className="dashboard-preview__title">Una lectura ejecutiva del flujo.</h2>
+              <p className="dashboard-preview__eyebrow">Panel operativo</p>
+              <h2 className="dashboard-preview__title">Panel operativo NEXORA</h2>
             </div>
             <div className="col-12 col-lg-5">
               <p className="dashboard-preview__intro">
-                Visualiza volumen, estados y señales operativas del abastecimiento sin navegar entre planillas o reportes aislados.
+                Una vista centralizada para monitorear solicitudes, proveedores, cotizaciones y procesos activos.
               </p>
               <p className="dashboard-preview__sync-note">
-                Cuando el backend local no entrega registros, NEXORA mantiene una muestra <strong>demo</strong> claramente marcada.
+                Cuando el backend local no entrega registros, NEXORA mantiene <strong>datos de demostración</strong> claramente marcados.
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ function DashboardPreview() {
               <div className="col-12 col-sm-6 col-xl-3" key={kpi.label}>
                 <article className="dashboard-preview__kpi h-100">
                   <div className={`dashboard-preview__state dashboard-preview__state--${kpi.state}`}>
-                    <span /> {kpi.state === 'live' ? 'live' : kpi.state === 'syncing' ? 'syncing' : 'demo'}
+                    <span /> {kpi.state === 'live' ? 'en vivo' : kpi.state === 'syncing' ? 'consultando' : 'demo'}
                   </div>
                   <strong>{kpi.value}</strong>
                   <p>{kpi.label}</p>
@@ -171,7 +171,7 @@ function DashboardPreview() {
               <article className="dashboard-preview__panel h-100">
                 <div className="dashboard-preview__panel-header">
                   <h3>Últimas solicitudes de compra</h3>
-                  {isDemoSolicitudes && <span>demo sample</span>}
+                  {isDemoSolicitudes && <span>datos de demostración</span>}
                 </div>
                 <div className="table-responsive">
                   <table className="table dashboard-preview__table align-middle mb-0">
@@ -211,8 +211,8 @@ function DashboardPreview() {
             <div className="col-12 col-xl-4">
               <aside className="dashboard-preview__panel dashboard-preview__monitor h-100">
                 <div className="dashboard-preview__panel-header">
-                  <h3>Pipeline monitor</h3>
-                  {isDemoPipelines && <span>demo sample</span>}
+                  <h3>Panel operativo</h3>
+                  {isDemoPipelines && <span>datos de demostración</span>}
                 </div>
                 <div className="dashboard-preview__pipeline-list">
                   {pipelineItems.map((pipeline, index) => {

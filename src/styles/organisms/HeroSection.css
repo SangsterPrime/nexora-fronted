@@ -1,7 +1,7 @@
 .hero-section {
   position: relative;
-  min-height: 100vh;
-  min-height: 100svh;
+  min-height: calc(100vh - var(--public-navbar-offset));
+  min-height: calc(100svh - var(--public-navbar-offset));
   overflow: hidden;
   isolation: isolate;
   background: var(--bg);
@@ -39,7 +39,7 @@
 .hero-section__container {
   position: relative;
   z-index: 4;
-  padding-top: 4.75rem;
+  padding-top: clamp(2rem, 5vw, 4.75rem);
 }
 
 .hero-section__content {
@@ -183,11 +183,11 @@
 
 @media (max-width: 575.98px) {
   .hero-section {
-    min-height: 780px;
+    min-height: calc(780px - var(--public-navbar-offset));
   }
 
   .hero-section__container {
-    padding-top: 6rem;
+    padding-top: 2rem;
     padding-bottom: 3.5rem;
   }
 

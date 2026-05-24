@@ -5,7 +5,6 @@ const links = [
   ['Inicio', '#inicio'],
   ['Problema', '#problema'],
   ['Solución', '#solucion'],
-  ['Para quién', '#para-quien'],
   ['Módulos', '#modulos'],
   ['Demo', '#demo'],
   ['Arquitectura', '#arquitectura'],
@@ -24,7 +23,7 @@ function Footer() {
               <a href={href} key={label}>{label}</a>
             ))}
           </nav>
-          <p>NEXORA Procurement OS · React + Spring Boot</p>
+          <p>NEXORA · Plataforma de gestión y automatización de abastecimiento.</p>
         </div>
       </div>
     </footer>

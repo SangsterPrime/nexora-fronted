@@ -1,3 +1,4 @@
+import PublicLayout from '../components/templates/PublicLayout'
 import HeroSection from '../components/organisms/HeroSection'
 import ProblemSection from '../components/organisms/ProblemSection'
 import SolutionSection from '../components/organisms/SolutionSection'
@@ -16,21 +17,23 @@ import '../styles/pages/Home.css'
 function Home() {
   return (
     <>
-      <main className="home-page">
-        <HeroSection />
-        <ProblemSection />
-        <SolutionSection />
-        <BenefitsSection />
-        <TargetUsersSection />
-        <OperationalFlowSection />
-        <ModulesSection />
-        <DashboardPreview />
-        <ProveedoresSection />
-        <ArchitectureSection />
-        <SystemStatusSection />
-        <FinalCTASection />
-      </main>
-      <Footer />
+      <PublicLayout>
+        <main className="home-page">
+          <HeroSection />
+          <ProblemSection />
+          <SolutionSection />
+          <BenefitsSection />
+          <TargetUsersSection />
+          <OperationalFlowSection />
+          <ModulesSection />
+          <DashboardPreview />
+          <ProveedoresSection />
+          <ArchitectureSection />
+          <SystemStatusSection />
+          <FinalCTASection />
+        </main>
+        <Footer />
+      </PublicLayout>
     </>
   )
 }

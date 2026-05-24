@@ -1,10 +1,11 @@
 .nexora-navbar {
-  position: fixed;
-  top: 1rem;
-  right: 0;
-  left: 0;
-  z-index: 6;
-  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 1rem 0 0.85rem;
+  background:
+    linear-gradient(180deg, rgba(3, 4, 5, 0.94) 0%, rgba(3, 4, 5, 0.72) 58%, rgba(3, 4, 5, 0) 100%);
+  isolation: isolate;
 }
 
 .nexora-navbar .container {
@@ -15,7 +16,7 @@
   padding: 0.65rem 1.05rem;
   border: 1px solid rgba(245, 245, 240, 0.1);
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(7, 9, 11, 0.72), rgba(7, 9, 11, 0.34));
+  background: linear-gradient(135deg, rgba(7, 9, 11, 0.9), rgba(7, 9, 11, 0.68));
   box-shadow:
     0 24px 80px rgba(0, 0, 0, 0.36),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -72,7 +73,7 @@
 
 @media (max-width: 575.98px) {
   .nexora-navbar {
-    top: 0.75rem;
+    padding: 0.75rem 0 0.75rem;
   }
 
   .nexora-navbar .container {

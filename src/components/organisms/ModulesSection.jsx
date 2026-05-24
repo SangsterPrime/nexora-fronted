@@ -7,7 +7,7 @@ const modules = [
     endpoint: '/api/proveedores',
   },
   {
-    title: 'Solicitudes',
+    title: 'Solicitudes de compra',
     text: 'Convierte requerimientos internos en flujos claros, priorizados y fáciles de seguir por el equipo.',
     endpoint: '/api/solicitudes-compra',
   },
@@ -22,7 +22,7 @@ const modules = [
     endpoint: '/api/negociaciones',
   },
   {
-    title: 'Órdenes',
+    title: 'Órdenes de compra',
     text: 'Ordena la emisión de compras desde cotizaciones aprobadas, con menos pasos manuales y más control.',
     endpoint: '/api/ordenes-compra',
   },
@@ -39,8 +39,8 @@ function ModulesSection() {
       <div className="container">
         <div className="row justify-content-between align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="modules-section__eyebrow">Plataforma SaaS</p>
-            <h2 className="modules-section__title">Todo el abastecimiento en un solo sistema.</h2>
+            <p className="modules-section__eyebrow">MÓDULOS</p>
+            <h2 className="modules-section__title">TODO EL FLUJO EN UN SOLO SISTEMA.</h2>
           </div>
           <div className="col-12 col-lg-4">
             <p className="modules-section__intro">

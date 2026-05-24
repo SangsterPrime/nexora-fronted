@@ -13,6 +13,7 @@
   --font-title: 'Saira Condensed', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --public-navbar-offset: 7rem;
 
   color: var(--text);
   background: var(--bg);
@@ -32,8 +33,18 @@ html {
   min-width: 320px;
   min-height: 100%;
   scroll-behavior: smooth;
-  scroll-padding-top: 6rem;
+  scroll-padding-top: var(--public-navbar-offset);
   background: var(--bg);
+}
+
+section[id] {
+  scroll-margin-top: var(--public-navbar-offset);
+}
+
+@media (max-width: 575.98px) {
+  :root {
+    --public-navbar-offset: 9.5rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

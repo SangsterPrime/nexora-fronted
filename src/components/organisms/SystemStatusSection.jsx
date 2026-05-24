@@ -8,14 +8,14 @@ function SystemStatusSection() {
   const requestHealth = useCallback(() => checkHealth(), [])
   const { data, loading, error, refetch } = useApiResource(requestHealth)
   const apiBaseUrl = API_BASE_URL || `${window.location.origin} → proxy /api`
-  const status = loading ? 'LOADING' : data?.status === 'UP' ? 'ONLINE' : 'OFFLINE'
+  const status = loading ? 'CONSULTANDO' : data?.status === 'UP' ? 'EN LÍNEA' : 'DESCONECTADO'
   const statusVariant = loading ? 'loading' : data?.status === 'UP' ? 'online' : 'offline'
   const responseLabel = loading ? 'Consultando /api/health...' : data?.status || error?.message || 'Sin respuesta del backend'
   const statusRows = [
-    ['API Base URL', apiBaseUrl],
-    ['Health Check', 'GET /api/health'],
+    ['Base API', apiBaseUrl],
+    ['Verificación', 'GET /api/health'],
     ['Swagger', '/swagger-ui.html'],
-    ['Response', responseLabel],
+    ['Respuesta', responseLabel],
   ]
 
   return (
@@ -24,7 +24,7 @@ function SystemStatusSection() {
         <div className="row align-items-center g-4 g-lg-5">
           <div className="col-12 col-lg-5">
             <p className="system-status-section__eyebrow">Bloque técnico</p>
-            <h2 className="system-status-section__title">Estado real de API.</h2>
+            <h2 className="system-status-section__title">Estado del sistema</h2>
             <p className="system-status-section__intro">
               Para demostraciones técnicas, el frontend consulta Spring Boot local y muestra si el endpoint de salud está disponible.
             </p>
@@ -55,10 +55,10 @@ function SystemStatusSection() {
                   }}
                   disabled={loading}
                 >
-                  {loading ? 'Consultando...' : 'Reintentar health check'}
+                  {loading ? 'Consultando...' : 'Reintentar verificación'}
                 </button>
                 <p className="system-status-section__note">
-                  Base API preparada en <code>src/services/api.js</code>. El estado cambia a ONLINE solo cuando Spring Boot responde <code>{'{ status: "UP" }'}</code>.
+                  Base API preparada en <code>src/services/api.js</code>. El estado cambia a EN LÍNEA solo cuando Spring Boot responde <code>{'{ status: "UP" }'}</code>.
                 </p>
               </div>
             </div>

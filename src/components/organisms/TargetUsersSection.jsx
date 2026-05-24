@@ -29,8 +29,8 @@ function TargetUsersSection() {
       <div className="container">
         <div className="row justify-content-between align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="target-users-section__eyebrow">Para quién es</p>
-            <h2 className="target-users-section__title">UN SISTEMA PARA EQUIPOS QUE COMPRAN, APRUEBAN Y DECIDEN.</h2>
+            <p className="target-users-section__eyebrow">PARA QUIÉN</p>
+            <h2 className="target-users-section__title">DISEÑADO PARA EQUIPOS QUE NECESITAN CONTROL.</h2>
           </div>
           <div className="col-12 col-lg-4">
             <p className="target-users-section__intro">

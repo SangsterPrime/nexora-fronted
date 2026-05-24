@@ -61,11 +61,15 @@ function getErrorMessage(error) {
       .join(' · ')
   }
 
+  if (error.status >= 500) {
+    return 'Backend local no disponible. Levanta Spring Boot en http://localhost:8080 para probar la demo.'
+  }
+
   if (error.status) {
     return `${error.message || 'No fue posible completar la operación.'} (HTTP ${error.status})`
   }
 
-  return error.message || 'No fue posible completar la operación. Verifica que el backend esté ejecutándose.'
+  return 'Backend local no disponible. Levanta Spring Boot en http://localhost:8080 para probar la demo.'
 }
 
 function validateForm(form) {
@@ -246,13 +250,13 @@ function ProveedoresSection() {
           <div className="row align-items-end g-4 mb-4">
             <div className="col-12 col-lg-7">
               <p className="proveedores-section__eyebrow">Demo interactiva</p>
-              <h2 className="proveedores-section__title">Gestión de proveedores</h2>
+              <h2 className="proveedores-section__title">Demo interactiva: gestión de proveedores</h2>
               <code className="proveedores-section__endpoint">/api/proveedores</code>
-              <p className="proveedores-section__api-note">Demo funcional con datos reales del backend local de NEXORA.</p>
+              <p className="proveedores-section__api-note">Este módulo permite registrar, editar y consultar proveedores conectándose al backend real de NEXORA.</p>
             </div>
             <div className="col-12 col-lg-5 text-lg-end">
               <p className="proveedores-section__intro">
-                Prueba un módulo funcional del producto: alta, edición, eliminación y refresco de proveedores conectado al backend local de NEXORA mediante API REST.
+                Este módulo permite registrar, editar y consultar proveedores conectándose al backend real de NEXORA.
               </p>
               <div className="proveedores-section__header-actions">
                 <button

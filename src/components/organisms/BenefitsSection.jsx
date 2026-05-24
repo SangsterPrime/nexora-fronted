@@ -29,7 +29,7 @@ function BenefitsSection() {
       <div className="container">
         <div className="row justify-content-between align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="benefits-section__eyebrow">Impacto operativo</p>
+            <p className="benefits-section__eyebrow">BENEFICIOS</p>
             <h2 className="benefits-section__title">
               MENOS FRICCIÓN.
               <span>MÁS CONTROL.</span>
@@ -52,7 +52,7 @@ function BenefitsSection() {
                 </div>
                 <div className="benefits-section__stat">
                   <strong>{benefit.stat}</strong>
-                  <span>demo metric</span>
+                  <span>métrica demo</span>
                 </div>
               </article>
             </div>
