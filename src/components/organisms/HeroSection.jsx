@@ -1,6 +1,7 @@
 import Button from '../atoms/Button'
 import Navbar from './Navbar'
 import HeroVideo from '../particles/HeroVideo'
+import DataParticles from '../particles/DataParticles'
 import Scanlines from '../particles/Scanlines'
 import Noise from '../particles/Noise'
 import '../../styles/organisms/HeroSection.css'
@@ -12,6 +13,7 @@ function HeroSection() {
       <div className="hero-section__overlay" aria-hidden="true" />
       <div className="hero-section__glow" aria-hidden="true" />
       <div className="hero-section__vignette" aria-hidden="true" />
+      <DataParticles />
       <Scanlines />
       <Noise />
 
