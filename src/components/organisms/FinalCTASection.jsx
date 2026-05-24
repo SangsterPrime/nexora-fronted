@@ -1,7 +1,11 @@
 import Button from '../atoms/Button'
+import { useAuth } from '../../context/AuthContext'
 import '../../styles/organisms/FinalCTASection.css'
 
 function FinalCTASection() {
+  const { authenticated } = useAuth()
+  const platformHref = authenticated ? '/app' : '/login'
+
   return (
     <section className="final-cta-section" id="contacto">
       <div className="container">
@@ -12,7 +16,7 @@ function FinalCTASection() {
             NEXORA convierte procesos de abastecimiento dispersos en un sistema claro, medible y automatizable.
           </p>
           <div className="final-cta-section__actions d-flex flex-column flex-sm-row justify-content-center gap-3">
-            <Button variant="primary" href="/app">Entrar a la plataforma</Button>
+            <Button variant="primary" href={platformHref}>Entrar a la plataforma</Button>
             <Button variant="secondary" href="#arquitectura">Ver arquitectura</Button>
           </div>
         </div>

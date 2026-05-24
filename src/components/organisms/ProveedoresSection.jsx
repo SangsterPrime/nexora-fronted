@@ -62,14 +62,14 @@ function getErrorMessage(error) {
   }
 
   if (error.status >= 500) {
-    return 'Backend local no disponible. Levanta Spring Boot en http://localhost:8080 para probar la demo.'
+    return 'Backend no disponible. Verifica que VITE_API_URL apunte a tu backend Spring Boot.'
   }
 
   if (error.status) {
     return `${error.message || 'No fue posible completar la operación.'} (HTTP ${error.status})`
   }
 
-  return 'Backend local no disponible. Levanta Spring Boot en http://localhost:8080 para probar la demo.'
+  return 'Backend no disponible. Verifica que VITE_API_URL apunte a tu backend Spring Boot.'
 }
 
 function validateForm(form) {

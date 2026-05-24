@@ -1,4 +1,5 @@
 import Logo from '../atoms/Logo'
+import { useAuth } from '../../context/AuthContext'
 import '../../styles/organisms/Navbar.css'
 
 const navLinks = [
@@ -12,6 +13,9 @@ const navLinks = [
 ]
 
 function Navbar() {
+  const { authenticated } = useAuth()
+  const platformHref = authenticated ? '/app' : '/login'
+
   return (
     <nav className="navbar navbar-expand-md nexora-navbar">
       <div className="container">
@@ -24,7 +28,7 @@ function Navbar() {
               {label}
             </a>
           ))}
-          <a className="nexora-navbar__cta" href="/app">Entrar a plataforma</a>
+          <a className="nexora-navbar__cta" href={platformHref}>Entrar a plataforma</a>
         </div>
       </div>
     </nav>
