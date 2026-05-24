@@ -1,0 +1,99 @@
+.nexora-navbar {
+  position: fixed;
+  top: 1rem;
+  right: 0;
+  left: 0;
+  z-index: 6;
+  padding: 0;
+}
+
+.nexora-navbar .container {
+  min-height: 4.25rem;
+  padding: 0.65rem 1.05rem;
+  border: 1px solid rgba(245, 245, 240, 0.1);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(7, 9, 11, 0.72), rgba(7, 9, 11, 0.34));
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+
+.nexora-navbar__brand {
+  margin: 0;
+  padding: 0;
+}
+
+.nexora-navbar__links {
+  align-items: center;
+  gap: clamp(0.8rem, 1.8vw, 1.6rem);
+}
+
+.nexora-navbar__link {
+  position: relative;
+  color: rgba(245, 245, 240, 0.72);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 180ms ease, text-shadow 180ms ease;
+}
+
+.nexora-navbar__link::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -0.45rem;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0;
+  transform: scaleX(0.36);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.nexora-navbar__link:hover,
+.nexora-navbar__link:focus-visible {
+  color: var(--green);
+  text-shadow: 0 0 18px rgba(157, 255, 0, 0.55);
+}
+
+.nexora-navbar__link:hover::after,
+.nexora-navbar__link:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.nexora-navbar__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.nexora-navbar__status::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(157, 255, 0, 0.8);
+}
+
+@media (max-width: 575.98px) {
+  .nexora-navbar {
+    top: 0.75rem;
+  }
+
+  .nexora-navbar .container {
+    width: calc(100% - 1.5rem);
+    min-height: 3.7rem;
+    padding-inline: 1rem;
+  }
+}
