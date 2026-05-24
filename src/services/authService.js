@@ -1,7 +1,5 @@
 import { apiGet, apiPost } from './api'
-import { API_BASE_URL } from '../config/api'
-
-const GOOGLE_AUTH_PATH = '/oauth2/authorization/google'
+import { API_URL } from '../config/api'
 
 export function getCurrentUser() {
   return apiGet('/api/auth/me')
@@ -12,5 +10,10 @@ export function logout() {
 }
 
 export function loginWithGoogle() {
-  window.location.href = `${API_BASE_URL}${GOOGLE_AUTH_PATH}`
+  if (!API_URL) {
+    console.warn('VITE_API_URL no está configurada. El login OAuth no funcionará.')
+    return
+  }
+
+  window.location.href = `${API_URL}/oauth2/authorization/google`
 }

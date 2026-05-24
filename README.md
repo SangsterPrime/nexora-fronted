@@ -73,6 +73,8 @@ En Vercel, Render o Netlify configura la variable de entorno:
 VITE_API_URL=https://nexora-backend-nb85.onrender.com
 ```
 
+Después de crear o cambiar `VITE_API_URL` en Vercel, redeploya el frontend. Vite inserta las variables `VITE_*` en tiempo de build, por lo que un cambio de Environment Variables no afecta al bundle ya compilado.
+
 El backend debe tener configurado Google OAuth2, CORS con credenciales y cookies de sesión compatibles con el dominio del frontend.
 
 Frontend desplegado actual:
