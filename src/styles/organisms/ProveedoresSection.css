@@ -197,6 +197,7 @@
 
 .proveedores-section__table-card {
   overflow: hidden;
+  min-width: 0;
   border-radius: 1.25rem;
 }
 
@@ -441,6 +442,19 @@
 }
 
 @media (max-width: 767.98px) {
+  .proveedores-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .proveedores-section__shell {
+    border-radius: 1.25rem;
+  }
+
+  .proveedores-section__title {
+    font-size: clamp(2.35rem, 13vw, 3.55rem);
+    overflow-wrap: anywhere;
+  }
+
   .proveedores-section__table-header,
   .proveedores-section__modal-actions {
     align-items: stretch;
@@ -456,6 +470,26 @@
 
   .proveedores-section__header-actions {
     justify-content: stretch;
+  }
+
+  .proveedores-section__modal-backdrop {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .proveedores-section__modal {
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: 1.15rem;
+  }
+
+  .proveedores-section__modal-header,
+  .proveedores-section__form {
+    padding: 1rem;
+  }
+
+  .proveedores-section__modal-header h3 {
+    font-size: clamp(2rem, 12vw, 3rem);
+    overflow-wrap: anywhere;
   }
 }
 

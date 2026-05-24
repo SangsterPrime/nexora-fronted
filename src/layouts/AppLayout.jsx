@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import Logo from '../components/atoms/Logo'
 import { useAuth } from '../context/AuthContext'
@@ -14,6 +15,7 @@ const appLinks = [
 function AppLayout({ children, eyebrow = 'NEXORA APP', title, description }) {
   const { logout, user } = useAuth()
   const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const displayName = user?.nombre || user?.name || user?.fullName || 'Usuario NEXORA'
   const email = user?.email || user?.correo || ''
   const photoUrl = user?.fotoUrl || user?.photoUrl || user?.picture || user?.avatarUrl
@@ -23,9 +25,35 @@ function AppLayout({ children, eyebrow = 'NEXORA APP', title, description }) {
     navigate('/', { replace: true })
   }
 
+  function closeSidebar() {
+    setSidebarOpen(false)
+  }
+
   return (
-    <div className="app-layout">
-      <aside className="app-layout__sidebar">
+    <div className={`app-layout ${sidebarOpen ? 'app-layout--sidebar-open' : ''}`}>
+      <button
+        className="app-layout__menu-button"
+        type="button"
+        onClick={() => setSidebarOpen((isOpen) => !isOpen)}
+        aria-controls="app-sidebar"
+        aria-expanded={sidebarOpen}
+      >
+        <span className="app-layout__menu-icon" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
+        <span>Menú</span>
+      </button>
+
+      <button
+        className="app-layout__scrim"
+        type="button"
+        onClick={closeSidebar}
+        aria-label="Cerrar navegación"
+      />
+
+      <aside className="app-layout__sidebar" id="app-sidebar">
         <a className="app-layout__brand" href="/" aria-label="Volver al sitio público">
           <Logo />
           <span>Procurement OS</span>
@@ -39,7 +67,7 @@ function AppLayout({ children, eyebrow = 'NEXORA APP', title, description }) {
         </div>
         <nav className="app-layout__nav" aria-label="Navegación interna">
           {appLinks.map(([label, to, end]) => (
-            <NavLink className="app-layout__nav-link" end={end} key={to} to={to}>
+            <NavLink className="app-layout__nav-link" end={end} key={to} to={to} onClick={closeSidebar}>
               {label}
             </NavLink>
           ))}

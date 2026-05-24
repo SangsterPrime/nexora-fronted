@@ -138,3 +138,18 @@
     transform: none;
   }
 }
+
+@media (max-width: 640px) {
+  .modules-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .modules-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+
+  .modules-section__card-title {
+    font-size: clamp(1.65rem, 9vw, 2rem);
+  }
+}

@@ -54,3 +54,19 @@
 .final-cta-section__actions {
   margin-top: 2rem;
 }
+
+@media (max-width: 640px) {
+  .final-cta-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .final-cta-section__panel {
+    padding: 1.35rem;
+    border-radius: 1.35rem;
+  }
+
+  .final-cta-section__title {
+    font-size: clamp(2.45rem, 14vw, 3.8rem);
+    overflow-wrap: anywhere;
+  }
+}

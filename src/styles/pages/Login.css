@@ -1,6 +1,7 @@
 .login-page {
   display: grid;
   min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
   padding: 1.5rem;
   color: var(--text);
@@ -62,6 +63,7 @@
 .login-page__google {
   display: inline-flex;
   width: 100%;
+  min-height: 3.35rem;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
@@ -77,6 +79,41 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .login-page {
+    align-items: stretch;
+    padding: 0.85rem;
+  }
+
+  .login-page__panel {
+    width: min(100%, 560px);
+    align-self: center;
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .login-page__brand {
+    margin-bottom: 1.35rem;
+  }
+
+  .login-page h1 {
+    font-size: clamp(2.45rem, 14vw, 3.65rem);
+    line-height: 0.92;
+    overflow-wrap: anywhere;
+  }
+
+  .login-page__text {
+    font-size: 0.96rem;
+    line-height: 1.62;
+  }
+
+  .login-page__google {
+    min-height: 3.5rem;
+    padding-inline: 0.85rem;
+    white-space: normal;
+  }
 }
 
 .login-page__google span {

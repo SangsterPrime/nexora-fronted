@@ -128,6 +128,15 @@
 }
 
 @media (max-width: 767.98px) {
+  .flow-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .flow-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+
   .flow-section__track {
     grid-template-columns: 1fr;
   }

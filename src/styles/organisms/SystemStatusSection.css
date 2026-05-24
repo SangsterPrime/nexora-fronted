@@ -214,3 +214,29 @@
     transition: none;
   }
 }
+
+@media (max-width: 640px) {
+  .system-status-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .system-status-section__title {
+    font-size: clamp(2.35rem, 13vw, 3.45rem);
+    overflow-wrap: anywhere;
+  }
+
+  .system-status-section__line {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .system-status-section__line code,
+  .system-status-section__note code {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .system-status-section__refresh {
+    width: 100%;
+  }
+}

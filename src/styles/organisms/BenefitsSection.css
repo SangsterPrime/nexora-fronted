@@ -108,3 +108,18 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+@media (max-width: 640px) {
+  .benefits-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .benefits-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+
+  .benefits-section__card {
+    min-height: auto;
+  }
+}

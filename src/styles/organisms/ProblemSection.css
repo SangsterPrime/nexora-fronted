@@ -91,3 +91,14 @@
   color: var(--muted);
   line-height: 1.65;
 }
+
+@media (max-width: 640px) {
+  .problem-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .problem-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+}

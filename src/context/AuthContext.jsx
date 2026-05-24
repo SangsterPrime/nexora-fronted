@@ -4,6 +4,12 @@ import { getCurrentUser, logout as requestLogout } from '../services/authService
 
 const AuthContext = createContext(null)
 
+function wait(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds)
+  })
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -14,9 +20,20 @@ export function AuthProvider({ children }) {
     setError(null)
 
     try {
-      const currentUser = await getCurrentUser()
-      setUser(currentUser)
-      return currentUser
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const currentUser = await getCurrentUser()
+          setUser(currentUser)
+          return currentUser
+        } catch (requestError) {
+          if ((requestError?.status === 401 || requestError?.status === 403) && attempt === 0) {
+            await wait(500)
+            continue
+          }
+
+          throw requestError
+        }
+      }
     } catch (requestError) {
       setUser(null)
 

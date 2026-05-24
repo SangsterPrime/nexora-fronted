@@ -176,4 +176,13 @@
   .architecture-section__trust {
     grid-template-columns: 1fr;
   }
+
+  .architecture-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .architecture-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
 }

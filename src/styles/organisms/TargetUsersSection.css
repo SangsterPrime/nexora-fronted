@@ -98,3 +98,14 @@
     min-height: auto;
   }
 }
+
+@media (max-width: 640px) {
+  .target-users-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .target-users-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+}

@@ -183,7 +183,7 @@
 
 @media (max-width: 575.98px) {
   .hero-section {
-    min-height: calc(780px - var(--public-navbar-offset));
+    min-height: auto;
   }
 
   .hero-section__container {
@@ -192,7 +192,9 @@
   }
 
   .hero-section__content {
+    width: 100%;
     text-align: left;
+    border-radius: 1.25rem;
   }
 
   .hero-section__eyebrow {
@@ -200,8 +202,9 @@
   }
 
   .hero-section__title {
-    font-size: clamp(3rem, 16vw, 4.35rem);
+    font-size: clamp(2.65rem, 15vw, 4.05rem);
     line-height: 0.84;
+    overflow-wrap: anywhere;
   }
 
   .hero-section__description {

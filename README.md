@@ -103,6 +103,17 @@ La base de API vive en `src/config/api.js`, lee `VITE_API_URL` y se usa desde `s
 
 La landing muestra una verificación visual del backend consultando `${VITE_API_URL}/api/health` en la sección de estado del sistema.
 
+## Prueba móvil
+
+1. Abrir `https://nexora-fronted.vercel.app/login` desde el celular.
+2. Tocar `Continuar con Google`.
+3. Google debe volver al backend y luego redirigir a `https://nexora-fronted.vercel.app/app`.
+4. Al cargar `/app`, el frontend consulta `GET /api/auth/me` con `credentials: 'include'`.
+
+Si falla en iPhone/Safari, prueba Chrome móvil o desactiva temporalmente `Configuración > Safari > Impedir seguimiento entre sitios`. Algunos navegadores móviles bloquean cookies cross-site con más fuerza cuando frontend y backend están en dominios distintos (`vercel.app` y `onrender.com`).
+
+Nota técnica futura: para máxima compatibilidad móvil conviene usar dominio propio compartido, por ejemplo `https://nexora.cl` y `https://api.nexora.cl`, en vez de mezclar dominios de Vercel y Render.
+
 ## Assets
 
 Los assets públicos principales viven en `public/assets/`.

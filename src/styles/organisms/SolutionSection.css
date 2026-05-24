@@ -110,6 +110,15 @@
 }
 
 @media (max-width: 575.98px) {
+  .solution-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .solution-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+
   .solution-section__flow-item {
     width: 100%;
     justify-content: space-between;
