@@ -24,19 +24,19 @@ function HeroSection() {
           <div className="col-12 col-lg-7 col-xl-6">
             <div className="hero-section__content">
               <p className="hero-section__eyebrow">— NEXORA PROCUREMENT OS</p>
-              <h1 className="hero-section__title" data-text="AUTOMATE PROCUREMENT. CONTROL THE FLOW.">
-                AUTOMATE PROCUREMENT.
-                <span>CONTROL THE FLOW.</span>
+              <h1 className="hero-section__title" data-text="CONTROL YOUR PROCUREMENT FLOW.">
+                CONTROL YOUR
+                <span>PROCUREMENT FLOW.</span>
               </h1>
               <p className="hero-section__description">
-                Centraliza solicitudes de compra, compara cotizaciones, gestiona proveedores y automatiza pipelines operativos con trazabilidad, métricas y control en tiempo real.
+                Centraliza solicitudes, proveedores, cotizaciones y órdenes de compra en una sola plataforma diseñada para reducir caos operativo, mejorar trazabilidad y acelerar decisiones.
               </p>
               <div className="hero-section__actions d-flex flex-column flex-sm-row gap-3">
-                <Button variant="primary" href="#modulos">▸ Ver módulos</Button>
-                <Button variant="secondary" href="#estado">Conectar API</Button>
+                <Button variant="primary" href="#demo">Solicitar demo</Button>
+                <Button variant="secondary" href="#solucion">Ver plataforma</Button>
               </div>
               <p className="hero-section__metadata">
-                SPRING BOOT · REACT · POSTGRESQL · API REST · PIPELINES · KPI
+                PROCUREMENT · SUPPLIERS · QUOTES · PIPELINES · KPI
               </p>
             </div>
           </div>

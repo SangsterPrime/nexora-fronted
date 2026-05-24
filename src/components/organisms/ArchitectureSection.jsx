@@ -18,6 +18,13 @@ const architectureCards = [
   },
 ]
 
+const trustItems = [
+  'MVP funcional conectado a backend Spring Boot',
+  'CRUD real de proveedores',
+  'API documentable con Swagger',
+  'Preparado para escalar módulos',
+]
+
 function ArchitectureSection() {
   return (
     <section className="architecture-section" id="arquitectura">
@@ -25,11 +32,11 @@ function ArchitectureSection() {
         <div className="row justify-content-between align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
             <p className="architecture-section__eyebrow">Arquitectura</p>
-            <h2 className="architecture-section__title">Stack listo para MVP real.</h2>
+            <h2 className="architecture-section__title">ARQUITECTURA LISTA PARA ESCALAR.</h2>
           </div>
           <div className="col-12 col-lg-4">
             <p className="architecture-section__intro">
-              Separación clara entre UI, API REST y persistencia para crecer hacia autenticación, dashboards y automatizaciones reales.
+              La capa técnica vive debajo de la experiencia comercial: UI modular, API REST y persistencia preparadas para crecer sin rehacer el producto.
             </p>
           </div>
         </div>
@@ -43,6 +50,12 @@ function ArchitectureSection() {
                 <p>{card.text}</p>
               </article>
             </div>
+          ))}
+        </div>
+
+        <div className="architecture-section__trust" aria-label="Evidencia técnica de confianza">
+          {trustItems.map((item) => (
+            <span key={item}>{item}</span>
           ))}
         </div>
       </div>

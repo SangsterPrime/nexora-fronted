@@ -15,12 +15,12 @@ function OperationalFlowSection() {
       <div className="container">
         <div className="row align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="flow-section__eyebrow">Flujo operacional</p>
+            <p className="flow-section__eyebrow">Cómo opera</p>
             <h2 className="flow-section__title">Del requerimiento al indicador.</h2>
           </div>
           <div className="col-12 col-lg-5">
             <p className="flow-section__intro">
-              NEXORA estructura cada etapa del abastecimiento para reducir fricción, mantener trazabilidad y convertir operaciones en datos accionables.
+              El flujo mantiene a compras, operación y dirección alineados desde que nace una necesidad hasta que el resultado se mide.
             </p>
           </div>
         </div>

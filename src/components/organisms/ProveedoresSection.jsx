@@ -245,13 +245,14 @@ function ProveedoresSection() {
         <div className="proveedores-section__shell">
           <div className="row align-items-end g-4 mb-4">
             <div className="col-12 col-lg-7">
-              <p className="proveedores-section__eyebrow">CRUD conectado</p>
-              <h2 className="proveedores-section__title">Proveedores</h2>
+              <p className="proveedores-section__eyebrow">Demo interactiva</p>
+              <h2 className="proveedores-section__title">Gestión de proveedores</h2>
               <code className="proveedores-section__endpoint">/api/proveedores</code>
+              <p className="proveedores-section__api-note">Demo funcional con datos reales del backend local de NEXORA.</p>
             </div>
             <div className="col-12 col-lg-5 text-lg-end">
               <p className="proveedores-section__intro">
-                Gestión real de proveedores del ciclo de abastecimiento. Alta, edición, eliminación y refresco contra Spring Boot local.
+                Prueba un módulo funcional del producto: alta, edición, eliminación y refresco de proveedores conectado al backend local de NEXORA mediante API REST.
               </p>
               <div className="proveedores-section__header-actions">
                 <button
@@ -377,7 +378,7 @@ function ProveedoresSection() {
                 <span>{editingProveedor ? 'Editar proveedor' : 'Nuevo proveedor'}</span>
                 <h3 id="proveedor-modal-title">{editingProveedor ? form.razonSocial : 'Registro proveedor'}</h3>
               </div>
-              <button type="button" onClick={closeModal} aria-label="Cerrar modal">×</button>
+              <button type="button" onClick={() => closeModal()} aria-label="Cerrar modal">×</button>
             </div>
 
             <form className="proveedores-section__form" onSubmit={handleSubmit} noValidate>
@@ -449,7 +450,7 @@ function ProveedoresSection() {
               </div>
 
               <div className="proveedores-section__modal-actions">
-                <button type="button" onClick={closeModal} disabled={submitting}>Cancelar</button>
+                <button type="button" onClick={() => closeModal()} disabled={submitting}>Cancelar</button>
                 <button type="submit" disabled={submitting}>{submitting ? 'Guardando...' : 'Guardar proveedor'}</button>
               </div>
             </form>

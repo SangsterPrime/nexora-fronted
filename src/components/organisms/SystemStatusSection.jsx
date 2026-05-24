@@ -23,10 +23,10 @@ function SystemStatusSection() {
       <div className="container">
         <div className="row align-items-center g-4 g-lg-5">
           <div className="col-12 col-lg-5">
-            <p className="system-status-section__eyebrow">Estado del sistema</p>
-            <h2 className="system-status-section__title">Health conectado.</h2>
+            <p className="system-status-section__eyebrow">Bloque técnico</p>
+            <h2 className="system-status-section__title">Estado real de API.</h2>
             <p className="system-status-section__intro">
-              El frontend consulta el backend Spring Boot local a través del proxy de Vite y muestra el estado operativo del endpoint de salud.
+              Para demostraciones técnicas, el frontend consulta Spring Boot local y muestra si el endpoint de salud está disponible.
             </p>
           </div>
           <div className="col-12 col-lg-7">

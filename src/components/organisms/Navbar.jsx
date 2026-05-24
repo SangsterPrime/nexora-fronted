@@ -3,12 +3,12 @@ import '../../styles/organisms/Navbar.css'
 
 const navLinks = [
   ['Inicio', '#inicio'],
-  ['Flujo', '#flujo'],
+  ['Problema', '#problema'],
+  ['Solución', '#solucion'],
+  ['Para quién', '#para-quien'],
   ['Módulos', '#modulos'],
-  ['Dashboard', '#dashboard'],
-  ['Proveedores', '#proveedores'],
+  ['Demo', '#demo'],
   ['Arquitectura', '#arquitectura'],
-  ['Estado', '#estado'],
 ]
 
 function Navbar() {

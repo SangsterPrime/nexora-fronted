@@ -133,20 +133,20 @@ function DashboardPreview() {
   ]
 
   return (
-    <section className="dashboard-preview" id="dashboard">
+    <section className="dashboard-preview" id="demo">
       <div className="container">
         <div className="dashboard-preview__shell">
           <div className="row align-items-end g-4 mb-4 mb-lg-5">
             <div className="col-12 col-lg-7">
-              <p className="dashboard-preview__eyebrow">Dashboard preview</p>
-              <h2 className="dashboard-preview__title">Command Center</h2>
+              <p className="dashboard-preview__eyebrow">Vista previa del Command Center</p>
+              <h2 className="dashboard-preview__title">Una lectura ejecutiva del flujo.</h2>
             </div>
             <div className="col-12 col-lg-5">
               <p className="dashboard-preview__intro">
-                Vista operacional del ciclo de abastecimiento: solicitudes, proveedores, cotizaciones y pipelines.
+                Visualiza volumen, estados y señales operativas del abastecimiento sin navegar entre planillas o reportes aislados.
               </p>
               <p className="dashboard-preview__sync-note">
-                Si la API está apagada o responde sin registros, esta vista usa datos <strong>demo</strong> identificados por tarjeta.
+                Cuando el backend local no entrega registros, NEXORA mantiene una muestra <strong>demo</strong> claramente marcada.
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ function DashboardPreview() {
               <article className="dashboard-preview__panel h-100">
                 <div className="dashboard-preview__panel-header">
                   <h3>Últimas solicitudes de compra</h3>
-                  {isDemoSolicitudes && <span>demo data</span>}
+                  {isDemoSolicitudes && <span>demo sample</span>}
                 </div>
                 <div className="table-responsive">
                   <table className="table dashboard-preview__table align-middle mb-0">
@@ -212,7 +212,7 @@ function DashboardPreview() {
               <aside className="dashboard-preview__panel dashboard-preview__monitor h-100">
                 <div className="dashboard-preview__panel-header">
                   <h3>Pipeline monitor</h3>
-                  {isDemoPipelines && <span>demo data</span>}
+                  {isDemoPipelines && <span>demo sample</span>}
                 </div>
                 <div className="dashboard-preview__pipeline-list">
                   {pipelineItems.map((pipeline, index) => {

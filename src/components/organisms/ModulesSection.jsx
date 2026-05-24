@@ -3,32 +3,32 @@ import '../../styles/organisms/ModulesSection.css'
 const modules = [
   {
     title: 'Proveedores',
-    text: 'Centraliza datos maestros, reputación, cumplimiento y estado operativo de cada proveedor.',
+    text: 'Unifica datos, contactos, reputación y cumplimiento para trabajar con proveedores confiables y visibles.',
     endpoint: '/api/proveedores',
   },
   {
     title: 'Solicitudes',
-    text: 'Registra requerimientos internos, prioridades, responsables y seguimiento del ciclo de compra.',
+    text: 'Convierte requerimientos internos en flujos claros, priorizados y fáciles de seguir por el equipo.',
     endpoint: '/api/solicitudes-compra',
   },
   {
     title: 'Cotizaciones',
-    text: 'Compara ofertas por monto, riesgo, plazo, condiciones comerciales y trazabilidad.',
+    text: 'Compara ofertas con criterios consistentes para decidir mejor, más rápido y con respaldo.',
     endpoint: '/api/cotizaciones',
   },
   {
     title: 'Negociaciones',
-    text: 'Conserva historial de mensajes, contraofertas, decisiones y estados de negociación.',
+    text: 'Mantiene historial de conversaciones, contraofertas y decisiones para no perder contexto comercial.',
     endpoint: '/api/negociaciones',
   },
   {
     title: 'Órdenes',
-    text: 'Emite órdenes de compra basadas en cotizaciones ganadoras y reglas operativas.',
+    text: 'Ordena la emisión de compras desde cotizaciones aprobadas, con menos pasos manuales y más control.',
     endpoint: '/api/ordenes-compra',
   },
   {
     title: 'Pipelines',
-    text: 'Orquesta automatizaciones, auditoría y ejecución de procesos del flujo de abastecimiento.',
+    text: 'Automatiza etapas del abastecimiento y habilita operación medible a través de pipelines.',
     endpoint: '/api/pipelines',
   },
 ]
@@ -39,12 +39,12 @@ function ModulesSection() {
       <div className="container">
         <div className="row justify-content-between align-items-end g-4 mb-4 mb-lg-5">
           <div className="col-12 col-lg-7">
-            <p className="modules-section__eyebrow">Procurement OS</p>
-            <h2 className="modules-section__title">Módulos principales</h2>
+            <p className="modules-section__eyebrow">Plataforma SaaS</p>
+            <h2 className="modules-section__title">Todo el abastecimiento en un solo sistema.</h2>
           </div>
           <div className="col-12 col-lg-4">
             <p className="modules-section__intro">
-              Componentes del dominio conectados a una API REST preparada para operación, auditoría y crecimiento incremental.
+              NEXORA organiza los módulos críticos del ciclo de compra para que operación, finanzas y dirección trabajen con la misma información.
             </p>
           </div>
         </div>

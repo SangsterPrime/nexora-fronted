@@ -87,3 +87,36 @@
   color: var(--muted);
   line-height: 1.68;
 }
+
+.architecture-section__trust {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.architecture-section__trust span {
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(157, 255, 0, 0.16);
+  border-radius: 1rem;
+  color: rgba(245, 245, 240, 0.82);
+  background: rgba(157, 255, 0, 0.045);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+@media (max-width: 991.98px) {
+  .architecture-section__trust {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .architecture-section__trust {
+    grid-template-columns: 1fr;
+  }
+}

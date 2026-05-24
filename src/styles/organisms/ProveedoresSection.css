@@ -74,6 +74,14 @@
   font-size: 0.72rem;
 }
 
+.proveedores-section__api-note {
+  max-width: 560px;
+  margin: 0.85rem 0 0;
+  color: rgba(245, 245, 240, 0.58);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
 .proveedores-section__intro {
   margin: 0 0 1.2rem;
   color: var(--muted);

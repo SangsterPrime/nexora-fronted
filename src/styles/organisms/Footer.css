@@ -1,0 +1,68 @@
+.nexora-footer {
+  padding: 2rem 0;
+  border-top: 1px solid rgba(245, 245, 240, 0.08);
+  background: #030405;
+}
+
+.nexora-footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.nexora-footer__brand {
+  text-decoration: none;
+}
+
+.nexora-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem 1.2rem;
+}
+
+.nexora-footer__links a {
+  color: rgba(245, 245, 240, 0.64);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 180ms ease;
+}
+
+.nexora-footer__links a:hover,
+.nexora-footer__links a:focus-visible {
+  color: var(--green);
+}
+
+.nexora-footer p {
+  margin: 0;
+  color: rgba(245, 245, 240, 0.52);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+@media (max-width: 991.98px) {
+  .nexora-footer__inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .nexora-footer__links {
+    justify-content: flex-start;
+  }
+
+  .nexora-footer p {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexora-footer__links a {
+    transition: none;
+  }
+}
