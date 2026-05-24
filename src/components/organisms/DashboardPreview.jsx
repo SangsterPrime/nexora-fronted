@@ -60,6 +60,14 @@ function hasRealItems(resource, error) {
   return !error && getContent(resource).length > 0
 }
 
+function getResourceState(resource, error, loading) {
+  if (loading) {
+    return 'syncing'
+  }
+
+  return hasRealItems(resource, error) ? 'live' : 'demo'
+}
+
 function formatMoney(value) {
   const amount = Number(value || 0)
 
@@ -100,19 +108,19 @@ function DashboardPreview() {
       label: 'Solicitudes activas',
       value: hasRealItems(solicitudes.data, solicitudes.error) ? getTotal(solicitudes.data) : demoSolicitudes.length,
       endpoint: '/api/solicitudes-compra',
-      state: solicitudes.loading ? 'syncing' : solicitudes.error ? 'demo' : 'live',
+      state: getResourceState(solicitudes.data, solicitudes.error, solicitudes.loading),
     },
     {
       label: 'Proveedores registrados',
       value: hasRealItems(proveedores.data, proveedores.error) ? getTotal(proveedores.data) : 24,
       endpoint: '/api/proveedores',
-      state: proveedores.loading ? 'syncing' : proveedores.error || getTotal(proveedores.data) === 0 ? 'demo' : 'live',
+      state: getResourceState(proveedores.data, proveedores.error, proveedores.loading),
     },
     {
       label: 'Cotizaciones recibidas',
       value: hasRealItems(cotizaciones.data, cotizaciones.error) ? getTotal(cotizaciones.data) : 18,
       endpoint: '/api/cotizaciones',
-      state: cotizaciones.loading ? 'syncing' : cotizaciones.error || getTotal(cotizaciones.data) === 0 ? 'demo' : 'live',
+      state: getResourceState(cotizaciones.data, cotizaciones.error, cotizaciones.loading),
     },
     {
       label: 'Pipelines activos',
@@ -120,12 +128,12 @@ function DashboardPreview() {
         ? getContent(pipelines.data).filter((pipeline) => pipeline.activo !== false).length
         : demoPipelines.filter((pipeline) => pipeline.activo).length,
       endpoint: '/api/pipelines',
-      state: pipelines.loading ? 'syncing' : pipelines.error ? 'demo' : 'live',
+      state: getResourceState(pipelines.data, pipelines.error, pipelines.loading),
     },
   ]
 
   return (
-    <section className="dashboard-preview" id="command-center">
+    <section className="dashboard-preview" id="dashboard">
       <div className="container">
         <div className="dashboard-preview__shell">
           <div className="row align-items-end g-4 mb-4 mb-lg-5">
@@ -136,6 +144,9 @@ function DashboardPreview() {
             <div className="col-12 col-lg-5">
               <p className="dashboard-preview__intro">
                 Vista operacional del ciclo de abastecimiento: solicitudes, proveedores, cotizaciones y pipelines.
+              </p>
+              <p className="dashboard-preview__sync-note">
+                Si la API está apagada o responde sin registros, esta vista usa datos <strong>demo</strong> identificados por tarjeta.
               </p>
             </div>
           </div>

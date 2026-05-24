@@ -8,6 +8,9 @@
 }
 
 .nexora-navbar .container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   min-height: 4.25rem;
   padding: 0.65rem 1.05rem;
   border: 1px solid rgba(245, 245, 240, 0.1);
@@ -25,6 +28,7 @@
 }
 
 .nexora-navbar__links {
+  display: flex;
   align-items: center;
   gap: clamp(0.8rem, 1.8vw, 1.6rem);
 }
@@ -66,26 +70,6 @@
   transform: scaleX(1);
 }
 
-.nexora-navbar__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: var(--green);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.nexora-navbar__status::before {
-  content: '';
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--green);
-  box-shadow: 0 0 12px rgba(157, 255, 0, 0.8);
-}
-
 @media (max-width: 575.98px) {
   .nexora-navbar {
     top: 0.75rem;
@@ -93,7 +77,36 @@
 
   .nexora-navbar .container {
     width: calc(100% - 1.5rem);
-    min-height: 3.7rem;
-    padding-inline: 1rem;
+    min-height: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1.25rem;
+  }
+
+  .nexora-navbar__links {
+    width: 100%;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+    scrollbar-width: none;
+  }
+
+  .nexora-navbar__links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nexora-navbar__link {
+    flex: 0 0 auto;
+    padding: 0.38rem 0.56rem;
+    border: 1px solid rgba(245, 245, 240, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 0.62rem;
+  }
+
+  .nexora-navbar__link::after {
+    display: none;
   }
 }

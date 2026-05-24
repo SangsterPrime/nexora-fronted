@@ -44,10 +44,28 @@ function getErrorMessage(error) {
   }
 
   if (Array.isArray(error.errores) && error.errores.length > 0) {
-    return error.errores.join(' · ')
+    return error.errores
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item
+        }
+
+        return item?.mensaje || item?.message || item?.defaultMessage || JSON.stringify(item)
+      })
+      .join(' · ')
   }
 
-  return error.message || 'No fue posible completar la operación.'
+  if (error.errores && typeof error.errores === 'object') {
+    return Object.entries(error.errores)
+      .map(([field, message]) => `${field}: ${message}`)
+      .join(' · ')
+  }
+
+  if (error.status) {
+    return `${error.message || 'No fue posible completar la operación.'} (HTTP ${error.status})`
+  }
+
+  return error.message || 'No fue posible completar la operación. Verifica que el backend esté ejecutándose.'
 }
 
 function validateForm(form) {
@@ -95,6 +113,7 @@ function ProveedoresSection() {
   const [form, setForm] = useState(emptyForm)
   const [formErrors, setFormErrors] = useState({})
   const [actionError, setActionError] = useState('')
+  const [actionMessage, setActionMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
 
@@ -106,6 +125,7 @@ function ProveedoresSection() {
     setForm(emptyForm)
     setFormErrors({})
     setActionError('')
+    setActionMessage('')
     setIsModalOpen(true)
   }
 
@@ -124,11 +144,12 @@ function ProveedoresSection() {
     })
     setFormErrors({})
     setActionError('')
+    setActionMessage('')
     setIsModalOpen(true)
   }
 
-  function closeModal() {
-    if (submitting) {
+  function closeModal(force = false) {
+    if (submitting && !force) {
       return
     }
 
@@ -145,6 +166,22 @@ function ProveedoresSection() {
       ...currentForm,
       [name]: value,
     }))
+    setFormErrors((currentErrors) => ({
+      ...currentErrors,
+      [name]: '',
+    }))
+  }
+
+  async function handleRefresh() {
+    setActionError('')
+    setActionMessage('')
+
+    try {
+      await refetch()
+      setActionMessage('Proveedores sincronizados con /api/proveedores.')
+    } catch (requestError) {
+      setActionError(getErrorMessage(requestError))
+    }
   }
 
   async function handleSubmit(event) {
@@ -153,6 +190,7 @@ function ProveedoresSection() {
     const validationErrors = validateForm(form)
     setFormErrors(validationErrors)
     setActionError('')
+    setActionMessage('')
 
     if (Object.keys(validationErrors).length > 0) {
       return
@@ -169,7 +207,8 @@ function ProveedoresSection() {
       }
 
       await refetch()
-      closeModal()
+      closeModal(true)
+      setActionMessage(editingProveedor ? 'Proveedor actualizado correctamente.' : 'Proveedor creado correctamente.')
     } catch (requestError) {
       setActionError(getErrorMessage(requestError))
     } finally {
@@ -186,11 +225,13 @@ function ProveedoresSection() {
     }
 
     setActionError('')
+    setActionMessage('')
     setDeletingId(id)
 
     try {
       await deleteProveedor(id)
       await refetch()
+      setActionMessage('Proveedor eliminado correctamente.')
     } catch (requestError) {
       setActionError(getErrorMessage(requestError))
     } finally {
@@ -212,13 +253,26 @@ function ProveedoresSection() {
               <p className="proveedores-section__intro">
                 Gestión real de proveedores del ciclo de abastecimiento. Alta, edición, eliminación y refresco contra Spring Boot local.
               </p>
-              <button className="proveedores-section__primary-action" type="button" onClick={openCreateModal}>
-                Nuevo proveedor
-              </button>
+              <div className="proveedores-section__header-actions">
+                <button
+                  className="proveedores-section__ghost-action"
+                  type="button"
+                  onClick={() => {
+                    handleRefresh().catch(() => {})
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? 'Actualizando...' : 'Refrescar'}
+                </button>
+                <button className="proveedores-section__primary-action" type="button" onClick={openCreateModal}>
+                  Nuevo proveedor
+                </button>
+              </div>
             </div>
           </div>
 
           {actionError && <div className="proveedores-section__alert">{actionError}</div>}
+          {actionMessage && <div className="proveedores-section__success">{actionMessage}</div>}
 
           <article className="proveedores-section__table-card">
             <div className="proveedores-section__table-header">
@@ -230,7 +284,7 @@ function ProveedoresSection() {
                 className="proveedores-section__ghost-action"
                 type="button"
                 onClick={() => {
-                  refetch().catch(() => {})
+                  handleRefresh().catch(() => {})
                 }}
                 disabled={loading}
               >
@@ -248,7 +302,13 @@ function ProveedoresSection() {
             {loading && <div className="proveedores-section__loading">Cargando proveedores desde /api/proveedores...</div>}
 
             {!loading && !error && proveedores.length === 0 && (
-              <div className="proveedores-section__empty">No hay proveedores registrados todavía.</div>
+              <div className="proveedores-section__empty">
+                <strong>No hay proveedores registrados.</strong>
+                <p>Cuando el backend devuelva registros en <code>/api/proveedores</code>, aparecerán aquí con acciones de edición y eliminación.</p>
+                <button className="proveedores-section__primary-action" type="button" onClick={openCreateModal}>
+                  Crear primer proveedor
+                </button>
+              </div>
             )}
 
             {!loading && !error && proveedores.length > 0 && (
@@ -321,31 +381,34 @@ function ProveedoresSection() {
             </div>
 
             <form className="proveedores-section__form" onSubmit={handleSubmit} noValidate>
+              <p className="proveedores-section__form-note">
+                Campos marcados con * son obligatorios. Los mensajes del backend se muestran sin ocultar el formulario.
+              </p>
               {actionError && <div className="proveedores-section__alert">{actionError}</div>}
 
               <div className="row g-3">
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-rut">RUT *</label>
-                  <input id="proveedor-rut" name="rut" value={form.rut} onChange={handleFieldChange} />
+                  <input id="proveedor-rut" name="rut" value={form.rut} onChange={handleFieldChange} autoComplete="off" />
                   {formErrors.rut && <small>{formErrors.rut}</small>}
                 </div>
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-razon-social">Razón social *</label>
-                  <input id="proveedor-razon-social" name="razonSocial" value={form.razonSocial} onChange={handleFieldChange} />
+                  <input id="proveedor-razon-social" name="razonSocial" value={form.razonSocial} onChange={handleFieldChange} autoComplete="organization" />
                   {formErrors.razonSocial && <small>{formErrors.razonSocial}</small>}
                 </div>
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-contacto">Nombre contacto</label>
-                  <input id="proveedor-contacto" name="nombreContacto" value={form.nombreContacto} onChange={handleFieldChange} />
+                  <input id="proveedor-contacto" name="nombreContacto" value={form.nombreContacto} onChange={handleFieldChange} autoComplete="name" />
                 </div>
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-email">Email *</label>
-                  <input id="proveedor-email" name="email" type="email" value={form.email} onChange={handleFieldChange} />
+                  <input id="proveedor-email" name="email" type="email" value={form.email} onChange={handleFieldChange} autoComplete="email" />
                   {formErrors.email && <small>{formErrors.email}</small>}
                 </div>
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-telefono">Teléfono</label>
-                  <input id="proveedor-telefono" name="telefono" value={form.telefono} onChange={handleFieldChange} />
+                  <input id="proveedor-telefono" name="telefono" value={form.telefono} onChange={handleFieldChange} autoComplete="tel" />
                 </div>
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-estado">Estado</label>
@@ -357,7 +420,7 @@ function ProveedoresSection() {
                 </div>
                 <div className="col-12">
                   <label htmlFor="proveedor-direccion">Dirección</label>
-                  <input id="proveedor-direccion" name="direccion" value={form.direccion} onChange={handleFieldChange} />
+                  <input id="proveedor-direccion" name="direccion" value={form.direccion} onChange={handleFieldChange} autoComplete="street-address" />
                 </div>
                 <div className="col-12 col-md-6">
                   <label htmlFor="proveedor-reputacion">Reputación score</label>

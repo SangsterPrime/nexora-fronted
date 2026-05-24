@@ -5,6 +5,8 @@ const navLinks = [
   ['Inicio', '#inicio'],
   ['Flujo', '#flujo'],
   ['Módulos', '#modulos'],
+  ['Dashboard', '#dashboard'],
+  ['Proveedores', '#proveedores'],
   ['Arquitectura', '#arquitectura'],
   ['Estado', '#estado'],
 ]
@@ -16,14 +18,13 @@ function Navbar() {
         <a className="navbar-brand nexora-navbar__brand" href="#inicio" aria-label="NEXORA home">
           <Logo />
         </a>
-        <div className="nexora-navbar__links d-none d-md-flex ms-auto">
+        <div className="nexora-navbar__links ms-md-auto">
           {navLinks.map(([label, href]) => (
             <a className="nexora-navbar__link" href={href} key={label}>
               {label}
             </a>
           ))}
         </div>
-        <span className="nexora-navbar__status d-md-none ms-auto">ONLINE</span>
       </div>
     </nav>
   )

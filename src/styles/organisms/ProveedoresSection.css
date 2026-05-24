@@ -80,6 +80,13 @@
   line-height: 1.7;
 }
 
+.proveedores-section__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 .proveedores-section__primary-action,
 .proveedores-section__ghost-action,
 .proveedores-section__actions button,
@@ -118,6 +125,7 @@
 }
 
 .proveedores-section__alert,
+.proveedores-section__success,
 .proveedores-section__error,
 .proveedores-section__loading,
 .proveedores-section__empty {
@@ -126,6 +134,12 @@
   border-radius: 1rem;
   font-family: var(--font-mono);
   font-size: 0.85rem;
+}
+
+.proveedores-section__success {
+  border: 1px solid rgba(157, 255, 0, 0.22);
+  color: var(--green);
+  background: rgba(157, 255, 0, 0.06);
 }
 
 .proveedores-section__alert,
@@ -144,6 +158,33 @@
   border: 1px solid rgba(0, 240, 255, 0.16);
   color: rgba(0, 240, 255, 0.82);
   background: rgba(0, 240, 255, 0.05);
+}
+
+.proveedores-section__empty {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.proveedores-section__empty strong {
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.proveedores-section__empty p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-body);
+  line-height: 1.65;
+}
+
+.proveedores-section__empty code {
+  color: var(--cyan);
 }
 
 .proveedores-section__table-card {
@@ -336,6 +377,17 @@
   padding: 1.25rem;
 }
 
+.proveedores-section__form-note {
+  margin: 0 0 1rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(245, 245, 240, 0.09);
+  border-radius: 0.9rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
 .proveedores-section__form label {
   display: block;
   margin-bottom: 0.45rem;
@@ -389,8 +441,13 @@
 
   .proveedores-section__primary-action,
   .proveedores-section__ghost-action,
+  .proveedores-section__header-actions,
   .proveedores-section__modal-actions button {
     width: 100%;
+  }
+
+  .proveedores-section__header-actions {
+    justify-content: stretch;
   }
 }
 

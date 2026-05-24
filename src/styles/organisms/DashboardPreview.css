@@ -65,6 +65,21 @@
   line-height: 1.7;
 }
 
+.dashboard-preview__sync-note {
+  margin: 0.85rem 0 0;
+  color: rgba(245, 245, 240, 0.58);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.dashboard-preview__sync-note strong {
+  color: #ff70df;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .dashboard-preview__kpi,
 .dashboard-preview__panel {
   border: 1px solid rgba(245, 245, 240, 0.1);

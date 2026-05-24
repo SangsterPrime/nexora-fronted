@@ -26,14 +26,23 @@ function createApiError(response, payload) {
 async function apiRequest(path, options = {}) {
   const { headers, ...fetchOptions } = options
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...fetchOptions,
-    headers: {
-      Accept: 'application/json',
-      ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
-      ...headers,
-    },
-  })
+  let response
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...fetchOptions,
+      headers: {
+        Accept: 'application/json',
+        ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
+        ...headers,
+      },
+    })
+  } catch (requestError) {
+    const error = new Error(`No se pudo conectar con ${path}. Verifica que Spring Boot esté ejecutándose.`)
+    error.cause = requestError
+    error.path = path
+    throw error
+  }
 
   const payload = await parseResponse(response)
   if (!response.ok) {
