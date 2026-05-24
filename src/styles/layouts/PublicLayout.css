@@ -1,0 +1,9 @@
+.public-layout {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.public-layout__content {
+  position: relative;
+  z-index: 1;
+}

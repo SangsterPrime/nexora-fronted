@@ -12,7 +12,7 @@ function FinalCTASection() {
             NEXORA convierte procesos de abastecimiento dispersos en un sistema claro, medible y automatizable.
           </p>
           <div className="final-cta-section__actions d-flex flex-column flex-sm-row justify-content-center gap-3">
-            <Button variant="primary" href="#demo">Entrar a la plataforma</Button>
+            <Button variant="primary" href="/app">Entrar a la plataforma</Button>
             <Button variant="secondary" href="#arquitectura">Ver arquitectura</Button>
           </div>
         </div>

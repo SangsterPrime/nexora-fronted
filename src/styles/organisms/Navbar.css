@@ -46,6 +46,25 @@
   transition: color 180ms ease, text-shadow 180ms ease;
 }
 
+.nexora-navbar__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.62rem 0.82rem;
+  border: 1px solid rgba(157, 255, 0, 0.42);
+  border-radius: 999px;
+  color: #061006;
+  background: linear-gradient(135deg, var(--green), #65ff7c);
+  box-shadow: 0 0 20px rgba(157, 255, 0, 0.16);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .nexora-navbar__link::after {
   content: '';
   position: absolute;
@@ -104,6 +123,12 @@
     border: 1px solid rgba(245, 245, 240, 0.1);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.035);
+    font-size: 0.62rem;
+  }
+
+  .nexora-navbar__cta {
+    flex: 0 0 auto;
+    padding: 0.42rem 0.62rem;
     font-size: 0.62rem;
   }
 

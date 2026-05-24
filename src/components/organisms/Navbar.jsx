@@ -24,6 +24,7 @@ function Navbar() {
               {label}
             </a>
           ))}
+          <a className="nexora-navbar__cta" href="/app">Entrar a plataforma</a>
         </div>
       </div>
     </nav>
