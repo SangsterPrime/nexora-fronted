@@ -7,11 +7,19 @@ describe('authService', () => {
   })
 
   it('redirects to Google OAuth without blocking an empty API_URL', () => {
-    const locationObject = { href: '' }
+    const windowLocation = { href: '' }
 
-    loginWithGoogle(locationObject)
+    loginWithGoogle(windowLocation)
 
-    expect(locationObject.href).toBe('/oauth2/authorization/google')
+    expect(windowLocation.href).toBe('/oauth2/authorization/google')
+  })
+
+  it('falls back to window.location when it receives an object without href', () => {
+    const windowLocation = { href: '' }
+
+    loginWithGoogle({ currentTarget: {} }, windowLocation)
+
+    expect(windowLocation.href).toBe('/oauth2/authorization/google')
   })
 
   it('gets the current user using the session cookie', async () => {

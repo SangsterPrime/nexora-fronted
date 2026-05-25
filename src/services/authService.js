@@ -13,6 +13,7 @@ export function logout() {
   return apiPost('/api/auth/logout')
 }
 
-export function loginWithGoogle(locationObject = window.location) {
-  locationObject.href = getGoogleLoginUrl()
+export function loginWithGoogle(locationObject = window.location, fallbackLocation = window.location) {
+  const targetLocation = locationObject?.href === undefined ? fallbackLocation : locationObject
+  targetLocation.href = getGoogleLoginUrl()
 }

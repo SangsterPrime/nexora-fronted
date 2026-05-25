@@ -27,13 +27,14 @@ describe('Login page', () => {
     expect(screen.getByText(/NEXORA no guarda tokens/i)).not.toBeNull()
   })
 
-  it('calls the injected Google login handler', () => {
+  it('calls the injected Google login handler without passing the click event', () => {
     const onLoginWithGoogle = jasmine.createSpy('onLoginWithGoogle')
     renderLogin(authValue({ authenticated: false, loading: false }), { onLoginWithGoogle })
 
     fireEvent.click(screen.getByRole('button', { name: /continuar con google/i }))
 
     expect(onLoginWithGoogle).toHaveBeenCalled()
+    expect(onLoginWithGoogle.calls.mostRecent().args).toEqual([])
   })
 
   it('disables the login button while auth is loading', () => {

@@ -25,7 +25,7 @@ function Login({ onLoginWithGoogle = loginWithGoogle }) {
           Accede a la plataforma NEXORA para gestionar proveedores, solicitudes, cotizaciones y procesos de abastecimiento.
         </p>
         {error && <div className="login-page__error">No fue posible validar la sesión actual. Puedes continuar con Google.</div>}
-        <button className="login-page__google" type="button" onClick={onLoginWithGoogle} disabled={loading}>
+        <button className="login-page__google" type="button" onClick={() => onLoginWithGoogle()} disabled={loading}>
           <span>G</span>
           {loading ? 'Validando sesión...' : 'Continuar con Google'}
         </button>
