@@ -25,7 +25,7 @@ function createApiError(response, payload) {
   return error
 }
 
-async function apiRequest(path, options = {}) {
+export async function apiRequest(path, options = {}) {
   const { headers, ...fetchOptions } = options
 
   let response

@@ -7,5 +7,6 @@ if (!import.meta.env.VITE_API_URL) {
 }
 
 export const API_BASE_URL = API_URL
+export { DEFAULT_API_URL }
 export { API_URL }
 export default API_URL

@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { getCurrentUser, logout as requestLogout } from '../services/authService'
 
-const AuthContext = createContext(null)
+export const AuthContext = createContext(null)
 
 function wait(milliseconds) {
   return new Promise((resolve) => {

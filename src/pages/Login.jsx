@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { loginWithGoogle } from '../services/authService'
 import '../styles/pages/Login.css'
 
-function Login() {
+function Login({ onLoginWithGoogle = loginWithGoogle }) {
   const { authenticated, loading, error } = useAuth()
   const location = useLocation()
   const from = location.state?.from?.pathname || '/app'
@@ -25,7 +25,7 @@ function Login() {
           Accede a la plataforma NEXORA para gestionar proveedores, solicitudes, cotizaciones y procesos de abastecimiento.
         </p>
         {error && <div className="login-page__error">No fue posible validar la sesión actual. Puedes continuar con Google.</div>}
-        <button className="login-page__google" type="button" onClick={loginWithGoogle} disabled={loading}>
+        <button className="login-page__google" type="button" onClick={onLoginWithGoogle} disabled={loading}>
           <span>G</span>
           {loading ? 'Validando sesión...' : 'Continuar con Google'}
         </button>
