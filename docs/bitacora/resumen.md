@@ -801,3 +801,845 @@ Posibles siguientes pasos:
 - CORS quedó igualmente configurado en backend para desarrollo local.
 - El CRUD de proveedores ya depende de que el backend y la base de datos estén levantados.
 - El dashboard preview usa datos reales cuando puede y fallback demo cuando la API falla o viene vacía.
+
+## Actualización 2026-05-25: Rutas, Google OAuth, Vercel, Tests y Fix de Login
+
+Esta actualización documenta la fase más reciente de trabajo sobre el frontend de NEXORA. En esta etapa el proyecto dejó de ser únicamente una landing conectable y pasó a tener una estructura híbrida real: sitio público, área interna protegida, autenticación Google OAuth delegada al backend, proxy de producción en Vercel, suite de pruebas unitarias con Karma/Jasmine y una corrección específica del bug que impedía navegar al login de Google.
+
+### Objetivo de Esta Fase
+
+El objetivo técnico fue dejar el frontend listo para operar con el backend desplegado en Render desde Vercel, sin exponer secretos, sin llamadas OAuth falsas, sin localStorage/sessionStorage para auth, y con pruebas automatizadas que cubran los puntos críticos.
+
+Los focos fueron:
+
+- Separar landing pública y aplicación interna.
+- Agregar rutas reales con React Router.
+- Implementar login Google OAuth usando sesión/cookies del backend.
+- Proteger rutas `/app*` con un guard de autenticación.
+- Mantener `/` público y no protegido.
+- Usar proxy same-origin en Vercel para evitar problemas de CORS/OAuth/cookies entre dominios.
+- Agregar pruebas unitarias de servicios, rutas, páginas y layout.
+- Activar reporte de coverage en Karma.
+- Corregir el bug del botón `Continuar con Google` que no navegaba.
+
+### Commits Relevantes de Esta Fase
+
+Los commits más relevantes creados durante esta fase fueron:
+
+```txt
+a4fd72e test: agregar pruebas unitarias frontend
+ab933cc test: habilitar reporte de coverage
+42dbf79 fix: usar proxy same-origin en Vercel
+35d4552 fix: corregir navegación del login Google
+```
+
+También existían commits previos importantes que prepararon el terreno:
+
+```txt
+2a3f4a5 feat: migrar NEXORA a estructura híbrida
+02185da feat: agregar autenticación con Google
+56aec7d chore: configurar URL del backend
+95360f8 chore: validar configuración de API
+ba808bf fix: usar backend Render por defecto
+a57b752 fix: mejorar experiencia móvil
+```
+
+### Estado Actual de Rutas
+
+El frontend ahora usa `react-router-dom` y dejó de ser una single-page landing plana.
+
+Rutas actuales:
+
+```txt
+/                  Landing pública
+/login             Pantalla de login Google
+/app               Dashboard interno protegido
+/app/proveedores   Módulo proveedores protegido
+/app/solicitudes   Módulo solicitudes protegido
+/app/cotizaciones  Módulo cotizaciones protegido
+/app/pipelines     Módulo pipelines protegido
+*                  Redirección a /
+```
+
+Archivo principal involucrado:
+
+```txt
+src/App.jsx
+```
+
+La landing pública se mantiene accesible sin sesión. Las rutas internas `/app*` se envuelven con `ProtectedRoute`.
+
+Decisiones importantes:
+
+- `/` no requiere autenticación.
+- `/login` tampoco requiere autenticación.
+- `/app` y subrutas sí requieren sesión válida.
+- Si el usuario no está autenticado, `ProtectedRoute` redirige a `/login`.
+- Si el usuario ya está autenticado y entra a `/login`, se redirige a la ruta privada solicitada o a `/app`.
+
+### Landing Pública
+
+La landing pública ahora vive en:
+
+```txt
+src/pages/Landing.jsx
+```
+
+Usa `PublicLayout` y conserva las secciones visuales premium:
+
+```txt
+HeroSection
+ProblemSection
+SolutionSection
+BenefitsSection
+TargetUsersSection
+OperationalFlowSection
+ModulesSection
+DashboardPreview
+ArchitectureSection
+FinalCTASection
+Footer
+```
+
+El navbar público adapta el CTA `Entrar a plataforma` según el estado de autenticación:
+
+```txt
+Usuario no autenticado -> /login
+Usuario autenticado    -> /app
+```
+
+Archivo relevante:
+
+```txt
+src/components/organisms/Navbar.jsx
+```
+
+### Layout Interno de Aplicación
+
+Se agregó un layout interno separado para las páginas privadas:
+
+```txt
+src/layouts/AppLayout.jsx
+```
+
+Responsabilidades del layout:
+
+- Sidebar interno con navegación de aplicación.
+- Header de página con `eyebrow`, `title` y `description`.
+- Card de usuario autenticado.
+- Botón de cierre de sesión.
+- Menú móvil con estado `aria-expanded`.
+- Scrim para cerrar navegación en mobile.
+
+Links internos actuales:
+
+```txt
+Dashboard      -> /app
+Proveedores    -> /app/proveedores
+Solicitudes    -> /app/solicitudes
+Cotizaciones   -> /app/cotizaciones
+Pipelines      -> /app/pipelines
+```
+
+El logout llama al contexto de auth y luego navega al sitio público:
+
+```txt
+logout()
+navigate('/', { replace: true })
+```
+
+### Autenticación Google OAuth
+
+La autenticación se delega al backend Spring Boot. El frontend no maneja tokens directamente.
+
+Archivos principales:
+
+```txt
+src/services/authService.js
+src/context/AuthContext.jsx
+src/components/auth/ProtectedRoute.jsx
+src/pages/Login.jsx
+```
+
+Funciones actuales de `authService`:
+
+```js
+getGoogleLoginUrl()
+getCurrentUser()
+logout()
+loginWithGoogle(locationObject = window.location, fallbackLocation = window.location)
+```
+
+Endpoints usados:
+
+```txt
+GET  /api/auth/me
+POST /api/auth/logout
+GET  /oauth2/authorization/google
+```
+
+La URL de Google OAuth se construye así:
+
+```js
+`${API_URL}/oauth2/authorization/google`
+```
+
+En producción, con `API_URL` vacío, la ruta resultante es:
+
+```txt
+/oauth2/authorization/google
+```
+
+Esa ruta same-origin la intercepta Vercel y la reenvía al backend Render.
+
+### AuthContext
+
+El contexto de autenticación vive en:
+
+```txt
+src/context/AuthContext.jsx
+```
+
+Expone:
+
+```txt
+user
+loading
+error
+refreshUser
+logout
+```
+
+Detalles importantes:
+
+- `authenticated` se calcula con `Boolean(user)`.
+- `refreshUser` llama `getCurrentUser()`.
+- Si el backend responde 401/403, se considera usuario no autenticado.
+- Si hay errores distintos de 401/403, se guardan en `error`.
+- El logout limpia usuario aunque el request de logout falle.
+- No se usa `localStorage`.
+- No se usa `sessionStorage`.
+- La sesión depende de cookies del backend con `credentials: 'include'`.
+
+Se exportó `AuthContext` además del provider/hook para facilitar wrappers de tests sin mockear módulos.
+
+### ProtectedRoute
+
+El guard vive en:
+
+```txt
+src/components/auth/ProtectedRoute.jsx
+```
+
+Comportamiento:
+
+- Mientras `loading` es true, muestra estado visual `Validando sesión` y `Conectando con NEXORA`.
+- Si `authenticated` es false, redirige a `/login`.
+- Si `authenticated` es true, renderiza `children`.
+
+También conserva en `state.from` la ruta solicitada para poder volver después del login.
+
+### Login Page
+
+Archivo:
+
+```txt
+src/pages/Login.jsx
+```
+
+La pantalla muestra:
+
+```txt
+Ingresa a NEXORA
+Continuar con Google
+Acceso seguro
+```
+
+El botón de Google quedó corregido para no pasar el evento de React al servicio:
+
+```jsx
+<button
+  className="login-page__google"
+  type="button"
+  onClick={() => onLoginWithGoogle()}
+  disabled={loading}
+>
+  <span>G</span>
+  {loading ? 'Validando sesión...' : 'Continuar con Google'}
+</button>
+```
+
+Este cambio fue necesario porque antes estaba así:
+
+```jsx
+onClick={onLoginWithGoogle}
+```
+
+React pasaba el evento del click como primer argumento. Como `loginWithGoogle` aceptaba un `locationObject`, terminaba intentando modificar `event.href` en vez de `window.location.href`. El resultado era que el botón se veía, pero al hacer click no navegaba correctamente al flujo OAuth.
+
+### Fix Defensivo en loginWithGoogle
+
+Además del fix en `Login.jsx`, se reforzó `authService.loginWithGoogle` para evitar que el mismo bug vuelva a romper navegación si en el futuro alguien vuelve a pasar un evento accidentalmente.
+
+Implementación actual:
+
+```js
+export function loginWithGoogle(locationObject = window.location, fallbackLocation = window.location) {
+  const targetLocation = locationObject?.href === undefined ? fallbackLocation : locationObject
+  targetLocation.href = getGoogleLoginUrl()
+}
+```
+
+Comportamiento:
+
+- Si recibe un objeto con `href`, lo usa como location destino.
+- Si recibe un evento de React u otro objeto sin `href`, usa `window.location` como fallback.
+- En tests se puede inyectar un `fallbackLocation` mockeado sin tocar `window.location`, porque en Chrome/Edge headless `window.location` no es configurable de forma segura.
+
+### Configuración API Actual
+
+Archivo:
+
+```txt
+src/config/api.js
+```
+
+La configuración actual permite URL base vacía:
+
+```js
+const RAW_API_URL = import.meta.env.VITE_API_URL ?? ''
+const API_URL = RAW_API_URL.replace(/\/$/, '')
+
+export const API_BASE_URL = API_URL
+export { API_URL }
+export default API_URL
+```
+
+Esto fue un cambio importante. Antes se usaba fallback directo a Render. Luego se cambió para que producción en Vercel use rutas relativas same-origin y delegue en `vercel.json`.
+
+Resultado por entorno:
+
+```txt
+Desarrollo local con .env:
+VITE_API_URL=http://localhost:8080
+
+Producción en Vercel:
+VITE_API_URL no configurada
+API_URL = ''
+Requests salen como /api/..., /oauth2/...
+```
+
+### Servicio API
+
+Archivo:
+
+```txt
+src/services/api.js
+```
+
+Se exportó `apiRequest` para poder probarlo directamente.
+
+Todas las llamadas usan:
+
+```js
+credentials: 'include'
+```
+
+Esto es crítico para sesiones/cookies del backend.
+
+Comportamiento cubierto:
+
+- Agrega `Accept: application/json`.
+- Agrega `Content-Type: application/json` solo cuando hay body.
+- Serializa POST/PUT con `JSON.stringify(data)`.
+- Parse JSON solo cuando el response tiene content-type JSON.
+- Devuelve `null` para respuestas exitosas sin JSON.
+- Lanza errores con `status`, `path`, `errores` y `payload` cuando el backend responde error.
+- Envuelve errores de red con contexto del endpoint.
+
+### Proxy Same-Origin en Vercel
+
+El proxy Vercel quedó configurado en:
+
+```txt
+vercel.json
+```
+
+Rewrites actuales:
+
+```json
+{
+  "source": "/api/:path*",
+  "destination": "https://nexora-backend-nb85.onrender.com/api/:path*"
+}
+```
+
+```json
+{
+  "source": "/oauth2/:path*",
+  "destination": "https://nexora-backend-nb85.onrender.com/oauth2/:path*"
+}
+```
+
+```json
+{
+  "source": "/login/oauth2/:path*",
+  "destination": "https://nexora-backend-nb85.onrender.com/login/oauth2/:path*"
+}
+```
+
+```json
+{
+  "source": "/actuator/:path*",
+  "destination": "https://nexora-backend-nb85.onrender.com/actuator/:path*"
+}
+```
+
+```json
+{
+  "source": "/db-test",
+  "destination": "https://nexora-backend-nb85.onrender.com/db-test"
+}
+```
+
+El fallback SPA se mantiene al final:
+
+```json
+{
+  "source": "/(.*)",
+  "destination": "/index.html"
+}
+```
+
+Orden importante:
+
+- Los rewrites API/OAuth deben ir antes del fallback SPA.
+- Si el fallback SPA estuviera primero, capturaría `/oauth2/...` y rompería OAuth.
+
+Validación reportada:
+
+```txt
+https://nexora-fronted.vercel.app/api/health funciona
+https://nexora-fronted.vercel.app/db-test funciona
+```
+
+### Variables de Entorno Actualizadas
+
+Archivo:
+
+```txt
+.env.example
+```
+
+Ahora documenta dos escenarios:
+
+```env
+# Desarrollo local
+VITE_API_URL=http://localhost:8080
+
+# Producción en Vercel
+# No configures VITE_API_URL para usar el proxy same-origin de vercel.json.
+```
+
+Regla actual:
+
+- En local se puede usar `VITE_API_URL=http://localhost:8080`.
+- En Vercel producción se recomienda no configurar `VITE_API_URL`.
+- Vite inserta variables `VITE_*` en build time.
+- Si se cambia, agrega o elimina `VITE_API_URL` en Vercel, hay que redeployar.
+
+### README Actualizado
+
+El README se actualizó para explicar:
+
+- El login Google usa `/oauth2/authorization/google` same-origin.
+- Vercel reenvía `/oauth2/**` al backend Render.
+- Producción no debe configurar `VITE_API_URL` si se quiere usar proxy same-origin.
+- Desarrollo local sí puede usar `VITE_API_URL=http://localhost:8080`.
+- Backend Render debe configurar redirect URI de Google.
+- Google Cloud Console debe tener URIs autorizadas para Vercel y Render.
+
+Redirect URI recomendado para backend Render:
+
+```env
+GOOGLE_OAUTH_REDIRECT_URI=https://nexora-fronted.vercel.app/login/oauth2/code/google
+```
+
+URIs autorizadas en Google Cloud Console:
+
+```txt
+https://nexora-fronted.vercel.app/login/oauth2/code/google
+https://nexora-backend-nb85.onrender.com/login/oauth2/code/google
+```
+
+### Favicon y Assets Públicos
+
+Se configuró favicon usando:
+
+```txt
+public/assets/logo.webp
+```
+
+El objetivo fue evitar el favicon genérico de Vite y usar un asset propio de NEXORA.
+
+También se mantiene el video hero:
+
+```txt
+public/assets/s4ngster-loop.mp4
+public/assets/s4ngster-hero.webp
+```
+
+### Suite de Testing Unitario
+
+Se agregó una suite de pruebas unitarias con Karma, Jasmine, Webpack/Babel y Testing Library.
+
+Dependencias agregadas:
+
+```txt
+karma
+karma-jasmine
+jasmine-core
+karma-chrome-launcher
+karma-webpack
+karma-babel-preprocessor
+karma-jasmine-html-reporter
+karma-coverage
+babel-loader
+@babel/core
+@babel/preset-env
+@babel/preset-react
+style-loader
+css-loader
+@testing-library/react
+@testing-library/jasmine-dom
+```
+
+Scripts agregados en `package.json`:
+
+```json
+"test": "karma start karma.conf.cjs --single-run",
+"test:watch": "karma start"
+```
+
+Archivos de configuración agregados:
+
+```txt
+karma.conf.cjs
+babel.config.cjs
+src/test/setupTests.js
+```
+
+La configuración de Karma:
+
+- Usa framework `jasmine`.
+- Carga primero `src/test/setupTests.js`.
+- Ejecuta specs desde `src/test/**/*.spec.jsx`.
+- Usa webpack para JSX/CSS/assets.
+- Define `import.meta.env.VITE_API_URL` como string vacío para simular producción same-origin.
+- Usa `style-loader` y `css-loader` para imports CSS.
+- Maneja assets `webp`, `png`, `jpg`, `gif`, `svg`, `mp4` como recursos.
+- Configura plugins explícitos porque con pnpm Karma no siempre autodescubre plugins.
+- Usa Edge como binario compatible cuando Chrome no está instalado en Windows.
+- Incluye reporter `coverage` para que `coverageReporter` genere salida real.
+
+Detalle del ajuste Edge/Chrome:
+
+```js
+const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
+if (!process.env.CHROME_BIN && existsSync(edgePath)) {
+  process.env.CHROME_BIN = edgePath
+}
+```
+
+Esto permite que `ChromeHeadless` use Edge headless en este entorno donde Chrome no está instalado.
+
+### Coverage
+
+Se activó coverage agregando `coverage` al array de reporters:
+
+```js
+reporters: ['progress', 'kjhtml', 'coverage']
+```
+
+El bloque `coverageReporter` ya existía:
+
+```js
+coverageReporter: {
+  dir: 'coverage/',
+  reporters: [
+    { type: 'html' },
+    { type: 'text-summary' },
+  ],
+}
+```
+
+También se agregó `coverage` a `.gitignore` para no versionar reportes generados.
+
+Además se agregó `coverage` a `globalIgnores` de ESLint:
+
+```js
+globalIgnores(['dist', 'coverage'])
+```
+
+### Setup de Tests
+
+Archivo:
+
+```txt
+src/test/setupTests.js
+```
+
+Responsabilidades:
+
+- Registrar matchers de `@testing-library/jasmine-dom`.
+- Ejecutar `cleanup()` después de cada spec.
+
+Se descubrió que los matchers de `jasmine-dom` no se podían usar de forma confiable en todos los specs por el orden de bundles de Karma/Webpack. Por eso muchos asserts DOM se dejaron con Jasmine nativo:
+
+```js
+expect(element).not.toBeNull()
+expect(button.disabled).toBeFalse()
+expect(link.getAttribute('href')).toBe('/login')
+```
+
+Esto hizo la suite más estable en Edge headless.
+
+### Test Utils
+
+Archivo:
+
+```txt
+src/test/testUtils.jsx
+```
+
+Helpers creados:
+
+```js
+authenticatedUser
+authValue(overrides)
+renderWithAuth(ui, options)
+jsonResponse(payload, options)
+```
+
+Uso principal:
+
+- Renderizar componentes con `AuthContext.Provider`.
+- Renderizar con `MemoryRouter`.
+- Mockear respuestas JSON de `fetch`.
+- Evitar llamadas reales al backend.
+- Evitar llamadas reales a Google.
+
+### Tests de Servicios
+
+Tests agregados:
+
+```txt
+src/test/services/apiConfig.spec.jsx
+src/test/services/api.spec.jsx
+src/test/services/authService.spec.jsx
+src/test/services/proveedorService.spec.jsx
+```
+
+Cobertura funcional:
+
+- `API_URL` puede ser string vacío para rewrites same-origin.
+- `API_BASE_URL` no debe contener placeholders falsos.
+- `apiPost` manda JSON con `credentials: 'include'`.
+- `apiGet` no agrega `Content-Type` si no hay body.
+- `apiDelete` soporta responses sin JSON.
+- Errores backend se transforman en errores ricos.
+- Errores de red se envuelven con contexto de endpoint.
+- `getGoogleLoginUrl()` devuelve `/oauth2/authorization/google` cuando `API_URL` está vacío.
+- `loginWithGoogle()` navega a `/oauth2/authorization/google`.
+- `loginWithGoogle()` usa fallback si recibe un objeto sin `href`.
+- `getCurrentUser()` llama `/api/auth/me` con cookies.
+- `logout()` llama `/api/auth/logout` con método POST y cookies.
+- `proveedorService` construye endpoints correctos para listar, crear, actualizar y eliminar.
+
+### Tests de Rutas y Páginas
+
+Tests agregados:
+
+```txt
+src/test/routes/ProtectedRoute.spec.jsx
+src/test/pages/LoginPage.spec.jsx
+src/test/pages/LandingPage.spec.jsx
+src/test/pages/AppPages.spec.jsx
+src/test/components/AppLayout.spec.jsx
+```
+
+Cobertura funcional:
+
+- `ProtectedRoute` muestra loading mientras valida sesión.
+- `ProtectedRoute` renderiza contenido si hay usuario autenticado.
+- `ProtectedRoute` redirige a `/login` si no hay sesión.
+- `Login` muestra textos principales y botón Google.
+- `Login` deshabilita el botón mientras `loading` es true.
+- `Login` redirige a `/app` o a `state.from.pathname` si ya hay sesión.
+- `Login` llama `onLoginWithGoogle()` sin pasar el evento del click.
+- `Landing` renderiza contenido público sin requerir autenticación.
+- `Landing` manda CTA a `/login` si no hay sesión.
+- `Landing` manda CTA a `/app` si hay sesión.
+- `AppLayout` muestra usuario y email.
+- `AppLayout` muestra links internos correctos.
+- `AppLayout` actualiza `aria-expanded` del menú móvil.
+- `AppLayout` ejecuta logout y navega al sitio público.
+- Páginas privadas renderizan shell y contenido esperado.
+- `Proveedores` renderiza proveedores devueltos por backend mockeado.
+
+### Bug del Login Google
+
+Bug reportado:
+
+```txt
+En /login el botón "Continuar con Google" se ve, pero al hacer click no navega.
+```
+
+Causa raíz:
+
+```jsx
+onClick={onLoginWithGoogle}
+```
+
+React ejecutaba el handler pasando el evento como primer argumento:
+
+```txt
+onLoginWithGoogle(event)
+```
+
+Pero `loginWithGoogle` esperaba opcionalmente un objeto tipo location:
+
+```js
+loginWithGoogle(locationObject = window.location)
+```
+
+Y luego hacía:
+
+```js
+locationObject.href = getGoogleLoginUrl()
+```
+
+Resultado:
+
+```txt
+Intentaba escribir event.href en vez de window.location.href.
+```
+
+Fix aplicado en `Login.jsx`:
+
+```jsx
+onClick={() => onLoginWithGoogle()}
+```
+
+Fix defensivo aplicado en `authService.js`:
+
+```js
+const targetLocation = locationObject?.href === undefined ? fallbackLocation : locationObject
+targetLocation.href = getGoogleLoginUrl()
+```
+
+Test agregado en `LoginPage.spec.jsx`:
+
+```js
+expect(onLoginWithGoogle.calls.mostRecent().args).toEqual([])
+```
+
+Test agregado en `authService.spec.jsx`:
+
+```js
+loginWithGoogle({ currentTarget: {} }, windowLocation)
+expect(windowLocation.href).toBe('/oauth2/authorization/google')
+```
+
+### Resultados de Validación
+
+Durante esta fase se ejecutaron repetidamente:
+
+```bash
+pnpm test
+pnpm build
+pnpm lint
+```
+
+Resultados finales relevantes:
+
+```txt
+pnpm test -> 34 SUCCESS
+pnpm build -> OK
+pnpm lint -> OK en la fase de setup de tests
+```
+
+El último `pnpm test` después del fix de login Google ejecutó 34 specs correctamente.
+
+El último `pnpm build` generó el bundle de producción correctamente con Vite.
+
+### Estado Actual del Frontend Después de Esta Fase
+
+Estado funcional:
+
+- Landing pública operativa.
+- Login Google visible y corregido para navegar.
+- Proxy Vercel funcionando para `/api/health` y `/db-test`.
+- Proxy Vercel preparado para `/oauth2/**` y `/login/oauth2/**`.
+- Rutas internas protegidas por sesión.
+- Servicios API usando cookies con `credentials: 'include'`.
+- API base compatible con producción same-origin.
+- CRUD proveedores preservado.
+- Suite de tests unitarios agregada.
+- Coverage reporter activado.
+- Build de producción validado.
+
+Estado de despliegue esperado:
+
+```txt
+Frontend Vercel:
+https://nexora-fronted.vercel.app
+
+Backend Render:
+https://nexora-backend-nb85.onrender.com
+```
+
+Rutas de diagnóstico validadas por proxy:
+
+```txt
+https://nexora-fronted.vercel.app/api/health
+https://nexora-fronted.vercel.app/db-test
+```
+
+Ruta OAuth esperada desde el botón Google:
+
+```txt
+https://nexora-fronted.vercel.app/oauth2/authorization/google
+```
+
+Esa ruta debe ser reenviada por Vercel hacia:
+
+```txt
+https://nexora-backend-nb85.onrender.com/oauth2/authorization/google
+```
+
+### Notas Técnicas Importantes Para Futuro
+
+- No volver a cambiar el botón Google a `onClick={loginWithGoogle}`.
+- Mantenerlo como `onClick={() => loginWithGoogle()}` o equivalente.
+- No configurar `VITE_API_URL` en Vercel si se quiere usar proxy same-origin.
+- Si se configura `VITE_API_URL` en Vercel, el bundle usará esa URL absoluta y se puede volver a problemas de CORS/cookies/OAuth.
+- Mantener rewrites OAuth antes del fallback SPA en `vercel.json`.
+- No commitear `coverage/`.
+- No commitear `.env` real.
+- No usar tokens en localStorage/sessionStorage.
+- Para tests de navegación, no tocar directamente `window.location` si el navegador headless no lo permite.
+- Preferir inyección de objetos `{ href: '' }` o fallback inyectable.
+
+### Pendientes Naturales Después de Esta Fase
+
+Posibles próximos pasos:
+
+1. Verificar manualmente en Vercel que `/login` redirige al flujo real de Google.
+2. Confirmar que Google Cloud Console tiene los redirect URIs correctos.
+3. Confirmar que backend Render emite cookies compatibles con frontend Vercel.
+4. Agregar pruebas para `AuthProvider` si se quiere cubrir retry 401/403.
+5. Instrumentar coverage real de código fuente si se quiere porcentaje útil, no solo summary.
+6. Agregar test de `vercel.json` o documentación automatizada para evitar romper el orden de rewrites.
+7. Expandir tests de CRUD proveedores con create/edit/delete mockeados.
+8. Agregar pruebas de accesibilidad básicas para login y navegación interna.
