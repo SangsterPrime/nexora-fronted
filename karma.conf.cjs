@@ -73,7 +73,7 @@ module.exports = function configureKarma(config) {
     webpackMiddleware: {
       stats: 'errors-only',
     },
-    reporters: ['progress', 'kjhtml'],
+    reporters: ['progress', 'kjhtml', 'coverage'],
     browsers: ['ChromeHeadless'],
     singleRun: false,
     autoWatch: true,
