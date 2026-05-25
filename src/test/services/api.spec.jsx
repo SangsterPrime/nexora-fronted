@@ -1,4 +1,3 @@
-import { API_URL } from '../../config/api'
 import { apiDelete, apiGet, apiPost, apiPut } from '../../services/api'
 import { jsonResponse } from '../testUtils'
 
@@ -10,7 +9,7 @@ describe('api service', () => {
     const [, options] = window.fetch.calls.mostRecent().args
 
     expect(result).toEqual({ id: 1 })
-    expect(window.fetch).toHaveBeenCalledWith(`${API_URL}/api/proveedores`, jasmine.any(Object))
+    expect(window.fetch).toHaveBeenCalledWith('/api/proveedores', jasmine.any(Object))
     expect(options.credentials).toBe('include')
     expect(options.method).toBe('POST')
     expect(options.headers.Accept).toBe('application/json')
@@ -25,6 +24,16 @@ describe('api service', () => {
     const [, options] = window.fetch.calls.mostRecent().args
 
     expect(options.headers['Content-Type']).toBeUndefined()
+  })
+
+  it('calls auth endpoints with relative URLs when API_BASE_URL is empty', async () => {
+    spyOn(window, 'fetch').and.returnValue(jsonResponse({ authenticated: true }))
+
+    await apiGet('/api/auth/me')
+
+    expect(window.fetch).toHaveBeenCalledWith('/api/auth/me', jasmine.objectContaining({
+      credentials: 'include',
+    }))
   })
 
   it('returns null for non JSON successful responses', async () => {

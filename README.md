@@ -62,20 +62,43 @@ La autenticación se delega al backend Spring Boot mediante Google OAuth2 y sesi
 El botón `Continuar con Google` redirige a:
 
 ```bash
-${VITE_API_URL}/oauth2/authorization/google
+/oauth2/authorization/google
 ```
+
+En producción esa ruta es same-origin en Vercel y `vercel.json` la reenvía al backend Render.
 
 ## Producción
 
-En Vercel, Render o Netlify configura la variable de entorno:
+En Vercel producción elimina `VITE_API_URL` o no la configures. El frontend usará rutas relativas same-origin y Vercel reenviará estas rutas al backend Render mediante `vercel.json`:
+
+- `/api/**`
+- `/oauth2/**`
+- `/login/oauth2/**`
+- `/actuator/**`
+- `/db-test`
+
+Para desarrollo local sí debes crear `.env` con:
 
 ```env
-VITE_API_URL=https://nexora-backend-nb85.onrender.com
+VITE_API_URL=http://localhost:8080
 ```
 
-Después de crear o cambiar `VITE_API_URL` en Vercel, redeploya el frontend. Vite inserta las variables `VITE_*` en tiempo de build, por lo que un cambio de Environment Variables no afecta al bundle ya compilado.
+Después de crear, eliminar o cambiar `VITE_API_URL` en Vercel, redeploya el frontend. Vite inserta las variables `VITE_*` en tiempo de build, por lo que un cambio de Environment Variables no afecta al bundle ya compilado.
 
 El backend debe tener configurado Google OAuth2, CORS con credenciales y cookies de sesión compatibles con el dominio del frontend.
+
+En Render backend configura:
+
+```env
+GOOGLE_OAUTH_REDIRECT_URI=https://nexora-fronted.vercel.app/login/oauth2/code/google
+```
+
+En Google Cloud Console agrega:
+
+```text
+https://nexora-fronted.vercel.app/login/oauth2/code/google
+https://nexora-backend-nb85.onrender.com/login/oauth2/code/google
+```
 
 Frontend desplegado actual:
 
@@ -99,9 +122,9 @@ Backend esperado en Spring Boot:
 - `/api/pipelines`
 - `/api/pipeline-ejecuciones`
 
-La base de API vive en `src/config/api.js`, lee `VITE_API_URL` y se usa desde `src/services/api.js` con `credentials: 'include'` para enviar cookies/sesión al backend.
+La base de API vive en `src/config/api.js`, lee `VITE_API_URL` y permite valor vacío para usar el proxy same-origin de Vercel. `src/services/api.js` usa `credentials: 'include'` para enviar cookies/sesión.
 
-La landing muestra una verificación visual del backend consultando `${VITE_API_URL}/api/health` en la sección de estado del sistema.
+La landing muestra una verificación visual del backend consultando `/api/health` en producción o `${VITE_API_URL}/api/health` en desarrollo local.
 
 ## Prueba móvil
 

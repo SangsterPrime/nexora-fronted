@@ -1,18 +1,17 @@
-import { API_URL } from '../../config/api'
 import { getCurrentUser, getGoogleLoginUrl, loginWithGoogle, logout } from '../../services/authService'
 import { jsonResponse } from '../testUtils'
 
 describe('authService', () => {
-  it('builds the Google OAuth backend URL', () => {
-    expect(getGoogleLoginUrl()).toBe(`${API_URL}/oauth2/authorization/google`)
+  it('builds the Google OAuth URL through the same-origin proxy', () => {
+    expect(getGoogleLoginUrl()).toBe('/oauth2/authorization/google')
   })
 
-  it('redirects to Google OAuth through the backend', () => {
+  it('redirects to Google OAuth without blocking an empty API_URL', () => {
     const locationObject = { href: '' }
 
     loginWithGoogle(locationObject)
 
-    expect(locationObject.href).toBe(`${API_URL}/oauth2/authorization/google`)
+    expect(locationObject.href).toBe('/oauth2/authorization/google')
   })
 
   it('gets the current user using the session cookie', async () => {
@@ -21,7 +20,7 @@ describe('authService', () => {
     const user = await getCurrentUser()
 
     expect(user.email).toBe('user@nexora.test')
-    expect(window.fetch).toHaveBeenCalledWith(`${API_URL}/api/auth/me`, jasmine.objectContaining({
+    expect(window.fetch).toHaveBeenCalledWith('/api/auth/me', jasmine.objectContaining({
       credentials: 'include',
     }))
   })
@@ -31,7 +30,7 @@ describe('authService', () => {
 
     await logout()
 
-    expect(window.fetch).toHaveBeenCalledWith(`${API_URL}/api/auth/logout`, jasmine.objectContaining({
+    expect(window.fetch).toHaveBeenCalledWith('/api/auth/logout', jasmine.objectContaining({
       method: 'POST',
       credentials: 'include',
     }))

@@ -14,10 +14,5 @@ export function logout() {
 }
 
 export function loginWithGoogle(locationObject = window.location) {
-  if (!API_URL) {
-    console.warn('VITE_API_URL no está configurada. El login OAuth no funcionará.')
-    return
-  }
-
   locationObject.href = getGoogleLoginUrl()
 }
