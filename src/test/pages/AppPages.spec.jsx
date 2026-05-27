@@ -15,11 +15,13 @@ describe('private app pages', () => {
     expect(screen.getAllByText('Pipelines').length).toBeGreaterThan(0)
   })
 
-  it('renders Solicitudes placeholder content', () => {
+  it('renders Solicitudes section with real component', () => {
+    spyOn(window, 'fetch').and.returnValue(jsonResponse({ content: [], totalElements: 0 }))
     renderWithAuth(<Solicitudes />)
 
     expect(screen.getByRole('heading', { name: 'Solicitudes de compra', level: 1 })).not.toBeNull()
     expect(screen.getByText('/api/solicitudes-compra')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Nueva solicitud' })).not.toBeNull()
   })
 
   it('renders Cotizaciones placeholder content', () => {

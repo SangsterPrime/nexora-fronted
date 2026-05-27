@@ -1,16 +1,13 @@
 import AppLayout from '../../layouts/AppLayout'
+import SolicitudesSection from '../../components/organisms/SolicitudesSection'
 
 function Solicitudes() {
   return (
     <AppLayout
       title="Solicitudes de compra"
-      description="Módulo preparado para gestionar requerimientos internos y seguimiento operativo."
+      description="Módulo conectado al backend real para crear, editar y gestionar solicitudes de compra con automatización n8n."
     >
-      <article className="app-page-card">
-        <h2>Solicitudes de compra</h2>
-        <p>Gestión de requerimientos internos desde la creación hasta su seguimiento.</p>
-        <code>/api/solicitudes-compra</code>
-      </article>
+      <SolicitudesSection />
     </AppLayout>
   )
 }
