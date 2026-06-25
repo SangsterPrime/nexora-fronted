@@ -44,7 +44,7 @@ describe('private app pages', () => {
     renderWithAuth(<Ia />)
 
     expect(screen.getByRole('heading', { name: 'Pipeline IA', level: 1 })).not.toBeNull()
-    expect(screen.getByText('/api/ml/*')).not.toBeNull()
+    expect(screen.getAllByText('/api/ml/*').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Verificar servicio IA' })).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Entrenar modelo' })).not.toBeNull()
   })

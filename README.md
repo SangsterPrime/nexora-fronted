@@ -144,55 +144,79 @@ La landing muestra una verificación visual del backend consultando `/api/health
 
 La vista `/app/ia` ("Pipeline IA" en el menú lateral) integra el frontend con el backend y el módulo de Machine Learning.
 
-Importante: **el frontend nunca llama directamente al servicio Python**. Solo consume los endpoints `/api/ml/*` expuestos por el backend Spring Boot, que reenvía internamente al pipeline de IA. La sesión viaja por cookie (`credentials: 'include'`); no se guardan tokens ni secretos en `localStorage`/`sessionStorage`.
+### Arquitectura final (Cron → Neon → Backend → Frontend)
+
+```
+EntrenamientoAI (Render Cron Job) → Neon PostgreSQL → backend Spring Boot (/api/ml/*) → frontend
+```
+
+- **EntrenamientoAI** (Python) corre como **Render Cron Job** de forma programada (no en vivo).
+- Cada corrida escribe **métricas y predicciones en Neon PostgreSQL**.
+- El **backend** Spring Boot lee Neon y expone los resultados en `/api/ml/*`.
+- El **frontend nunca llama a Python directamente**: solo consume `/api/ml/*` mediante `src/services/mlApi.js`. La sesión viaja por cookie (`credentials: 'include'`); no se guardan tokens ni secretos en `localStorage`/`sessionStorage`.
+
+El backend puede operar en **modo CRON** o **modo API**:
+
+- **Modo API:** `/train` y `/score` ejecutan en vivo y devuelven 2xx con resultados.
+- **Modo CRON:** `/train` y `/score` responden **202 / 409** indicando que la corrida la agenda Render. La vista lo trata como mensaje informativo (no como error crítico) y sugiere usar **Trigger Run** en Render.
 
 El cliente vive en `src/services/mlApi.js`:
 
-| Función | Método | Endpoint |
-| --- | --- | --- |
-| `getMlHealth` | GET | `/api/ml/health` |
-| `trainModel` | POST | `/api/ml/train` |
-| `scoreModel` | POST | `/api/ml/score` |
-| `getMetrics` | GET | `/api/ml/metrics` |
-| `getPredictions` | GET | `/api/ml/predictions` |
+| Función | Método | Endpoint | En modo CRON |
+| --- | --- | --- | --- |
+| `getMlHealth` | GET | `/api/ml/health` | Reporta `mode` (CRON/API) |
+| `trainModel` | POST | `/api/ml/train` | Responde 202/409 (agendado) |
+| `scoreModel` | POST | `/api/ml/score` | Responde 202/409 (batch en cron) |
+| `getMetrics` | GET | `/api/ml/metrics` | Lee últimas métricas de Neon |
+| `getPredictions` | GET | `/api/ml/predictions` | Lee predicciones de Neon |
 
 La vista muestra:
 
+- **Resumen de integración:** modo (`Cron Job / Render` o `API`), última ejecución detectada, métricas disponibles desde Neon y cantidad de predicciones.
 - Tarjetas de métricas: **Accuracy, Recall, Precision, F1 Score, ROC-AUC y Gini**.
 - **Matriz de confusión** (TN / FP / FN / TP).
-- **Estado del servicio ML** (operativo / offline) y **última ejecución** del pipeline.
-- **Tabla de predicciones/resultados** scoreados por el modelo.
-- Botones: **Verificar servicio IA**, **Entrenar modelo**, **Ejecutar scoring** y **Actualizar métricas**, con estados de carga, error y éxito.
+- **Estado del servicio ML** (operativo / offline) y **última ejecución** detallada: timestamp, modelo seleccionado, duración, muestras y fuente (**Neon PostgreSQL**).
+- **Tabla de predicciones/resultados** publicados en Neon.
+- Botones: **Verificar servicio IA**, **Entrenar modelo**, **Ejecutar scoring**, **Actualizar predicciones** y **Actualizar métricas**, con estados de carga, error e información (modo Cron).
 
-El parseo de las respuestas es defensivo: acepta métricas en rango 0–1 o en porcentaje, distintas variantes de nombres (`rocAuc` / `roc_auc` / `auc`, `f1` / `f1Score`, etc.) y la matriz de confusión como arreglo `[[TN, FP], [FN, TP]]` o como campos sueltos (`tn`, `fp`, `fn`, `tp`).
+El parseo de las respuestas es defensivo: acepta métricas en rango 0–1 o en porcentaje, distintas variantes de nombres (`rocAuc` / `roc_auc` / `auc`, `f1` / `f1Score`, `model` / `selectedModel`, `durationSeconds` / `durationMs`, etc.) y la matriz de confusión como arreglo `[[TN, FP], [FN, TP]]` o como campos sueltos (`tn`, `fp`, `fn`, `tp`).
 
-### Cómo se prueba
+### Cómo se prueba (demo en modo Cron Job)
 
-1. Backend local en Spring Boot con los endpoints `/api/ml/*` disponibles.
-2. Crear `.env` con `VITE_API_URL=http://localhost:8080` y levantar el frontend con `pnpm dev`.
+1. Backend local o en Render con los endpoints `/api/ml/*` disponibles, leyendo de Neon. `/api/ml/health` debe devolver `mode: "CRON"`.
+2. Crear `.env` con `VITE_API_URL=http://localhost:8080` (local) y levantar el frontend con `pnpm dev`. En producción no se define `VITE_API_URL`.
 3. Iniciar sesión y entrar a `/app/ia` desde el menú "Pipeline IA".
-4. Usar los botones en orden: **Verificar servicio IA** → **Entrenar modelo** → **Ejecutar scoring** → **Actualizar métricas**.
-5. Si el backend aún no publica `/api/ml/*`, la vista muestra mensajes de error controlados (por ejemplo HTTP 404) sin romper la UI.
+4. La vista carga automáticamente estado, métricas y predicciones desde Neon y muestra el badge **Modo Cron Job / Render**.
+5. Pulsar **Verificar servicio IA** para confirmar el modo, y **Actualizar métricas** / **Actualizar predicciones** para releer Neon.
+6. Pulsar **Entrenar modelo** o **Ejecutar scoring**: en modo CRON la vista muestra el mensaje *"El entrenamiento se ejecuta por Render Cron Job. Para forzar una corrida, usa Trigger Run en Render."* (y el equivalente para scoring), sin romper la UI.
+7. Para forzar una corrida real, usar **Trigger Run** en el Cron Job de Render; al terminar, refrescar métricas/predicciones en la vista.
+8. Si el backend aún no publica `/api/ml/*`, la vista muestra mensajes de error controlados (p. ej. HTTP 404) sin romper la UI.
 
-Respuestas esperadas (ejemplo):
+Respuestas esperadas (ejemplo, modo CRON):
 
 ```json
 // GET /api/ml/health
-{ "status": "UP", "model": "credit-risk", "version": "v1" }
+{ "status": "UP", "mode": "CRON", "model": "XGBoost", "version": "v1" }
 
-// GET /api/ml/metrics
+// GET /api/ml/metrics  (publicadas por el cron en Neon)
 {
   "accuracy": 0.92, "recall": 0.88, "precision": 0.90,
   "f1": 0.89, "rocAuc": 0.95, "gini": 0.90,
   "confusionMatrix": [[120, 8], [10, 95]],
-  "lastRun": "2026-06-24T12:00:00Z", "modelVersion": "v1", "samples": 233
+  "lastRun": "2026-06-24T12:00:00Z", "model": "XGBoost",
+  "modelVersion": "v1", "durationSeconds": 42, "samples": 233,
+  "source": "Neon PostgreSQL"
 }
 
+// POST /api/ml/train  → en modo CRON
+// HTTP 202 / 409
+{ "mode": "CRON", "message": "El entrenamiento se ejecuta por Render Cron Job." }
+
 // GET /api/ml/predictions
-{ "content": [ { "id": 1, "score": 0.8123, "probability": 0.81, "prediction": "1" } ] }
+{ "content": [ { "id": 1, "score": 0.8123, "probability": 0.81, "prediction": "1" } ], "totalElements": 1 }
 ```
 
-Pruebas automatizadas: `src/test/services/mlApi.spec.jsx` cubre los endpoints del cliente y `src/test/pages/AppPages.spec.jsx` valida el render de la vista. Ejecuta `pnpm test`.
+Pruebas automatizadas: `src/test/services/mlApi.spec.jsx` cubre los endpoints del cliente, `src/test/components/IaPipelineSection.spec.jsx` cubre el **modo Cron** (badge, última ejecución, respuestas 202/409 amigables) y `src/test/pages/AppPages.spec.jsx` valida el render de la vista. Ejecuta `pnpm test`.
 
 ## Prueba móvil
 

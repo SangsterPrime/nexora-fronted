@@ -19,6 +19,15 @@ const METRIC_CARDS = [
   { key: 'gini', label: 'Gini', keys: ['gini', 'giniCoefficient', 'gini_coefficient'], accent: 'magenta' },
 ]
 
+/* Mensajes para el modo Cron Job (no son errores críticos de la UI). */
+const CRON_TRAIN_MESSAGE =
+  'El entrenamiento se ejecuta por Render Cron Job. Para forzar una corrida, usa Trigger Run en Render.'
+const CRON_SCORE_MESSAGE =
+  'El scoring batch se ejecuta por Render Cron Job y escribe los resultados en Neon. Para forzar una corrida, usa Trigger Run en Render.'
+
+const CRON_MODES = ['CRON', 'CRON_JOB', 'CRONJOB', 'SCHEDULED', 'BATCH']
+const API_MODES = ['API', 'LIVE', 'ONLINE', 'REALTIME', 'REAL_TIME']
+
 /* ── Helpers de parseo defensivo ─────────────────────────────────────────── */
 
 function getErrorMessage(error) {
@@ -27,7 +36,7 @@ function getErrorMessage(error) {
   }
 
   if (error.status >= 500) {
-    return 'Servicio de IA no disponible. Verifica que el backend exponga /api/ml/* y que el pipeline Python esté arriba.'
+    return 'Servicio de IA no disponible. Verifica que el backend exponga /api/ml/* y que Neon tenga resultados.'
   }
 
   if (error.status === 404) {
@@ -113,14 +122,87 @@ function getHealthInfo(data) {
   return { online, status: status || 'DESCONOCIDO', detail }
 }
 
+/** Detecta el modo de integración (CRON / API) desde el payload de /health. */
+function getMode(data) {
+  if (!data || typeof data !== 'object') {
+    return null
+  }
+
+  const raw = String(data.mode || data.modo || data.runMode || data.integrationMode || '').toUpperCase()
+  if (CRON_MODES.includes(raw)) {
+    return 'CRON'
+  }
+  if (API_MODES.includes(raw)) {
+    return 'API'
+  }
+  if (data.cron === true || data.scheduled === true) {
+    return 'CRON'
+  }
+  return null
+}
+
+/**
+ * Determina si una respuesta de /train o /score indica modo Cron Job
+ * (el backend no ejecutó la corrida en vivo: la agenda el cron de Render).
+ */
+function isCronResponse(payload, status) {
+  if (status === 202 || status === 409) {
+    return true
+  }
+  if (!payload || typeof payload !== 'object') {
+    return false
+  }
+  const mode = String(payload.mode || payload.modo || '').toUpperCase()
+  if (CRON_MODES.includes(mode)) {
+    return true
+  }
+  return payload.scheduled === true || payload.cron === true || payload.triggered === false
+}
+
+function formatDuration(seconds) {
+  if (seconds === null || seconds === undefined || Number.isNaN(seconds)) {
+    return null
+  }
+  if (seconds < 60) {
+    return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)} s`
+  }
+  const minutes = Math.floor(seconds / 60)
+  const rest = Math.round(seconds % 60)
+  return `${minutes}m ${rest}s`
+}
+
+function getDurationLabel(root) {
+  const seconds = pickNumber(root, ['durationSeconds', 'duration_seconds', 'durationSec', 'elapsedSeconds', 'trainingTime'])
+  if (seconds !== null) {
+    return formatDuration(seconds)
+  }
+  const ms = pickNumber(root, ['durationMs', 'duration_ms', 'elapsedMs'])
+  if (ms !== null) {
+    return formatDuration(ms / 1000)
+  }
+  const generic = pickNumber(root, ['duration', 'elapsed'])
+  if (generic !== null) {
+    // Heurística: valores grandes probablemente vienen en milisegundos.
+    return formatDuration(generic > 1000 ? generic / 1000 : generic)
+  }
+  const raw = root.duration || root.elapsed
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    return raw
+  }
+  return null
+}
+
 function getLastRunInfo(metricsData) {
   const root = getMetricsRoot(metricsData)
   const timestamp =
-    root.lastRun || root.last_run || root.lastTrainedAt || root.trainedAt || root.updatedAt || root.timestamp
+    root.lastRun || root.last_run || root.lastTrainedAt || root.trainedAt || root.executedAt || root.updatedAt || root.timestamp
   const version = root.modelVersion || root.model_version || root.version
+  const model = root.model || root.modelName || root.model_name || root.selectedModel || root.modelo || root.algorithm
   const samples = pickNumber(root, ['samples', 'rows', 'nSamples', 'datasetSize'])
+  const duration = getDurationLabel(root)
+  const source = root.source || root.dataSource || root.origin || 'Neon PostgreSQL'
 
-  return { timestamp: timestamp || null, version: version || null, samples }
+  return { timestamp: timestamp || null, version: version || null, model: model || null, samples, duration, source }
 }
 
 function formatDateTime(value) {
@@ -195,21 +277,41 @@ function IaPipelineSection() {
   const predictions = useApiResource(requestPredictions)
 
   const [actionError, setActionError] = useState('')
+  const [actionInfo, setActionInfo] = useState('')
   const [actionMessage, setActionMessage] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [training, setTraining] = useState(false)
   const [scoring, setScoring] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
+  const [refreshingMetrics, setRefreshingMetrics] = useState(false)
+  const [refreshingPredictions, setRefreshingPredictions] = useState(false)
+  const [cronDetected, setCronDetected] = useState(false)
 
-  const busy = verifying || training || scoring || refreshing
+  const busy = verifying || training || scoring || refreshingMetrics || refreshingPredictions
   const healthInfo = getHealthInfo(health.data)
   const matrix = getConfusionMatrix(metrics.data)
   const lastRun = getLastRunInfo(metrics.data)
   const predictionRows = getPredictionRows(predictions.data)
   const metricsRoot = getMetricsRoot(metrics.data)
+  const metricsLoading = metrics.loading
+  const metricsError = metrics.error
+
+  const predictionsTotal = typeof predictions.data?.totalElements === 'number'
+    ? predictions.data.totalElements
+    : predictionRows.length
+  const metricsAvailable = METRIC_CARDS.some((card) => pickNumber(metricsRoot, card.keys) !== null) || Boolean(matrix)
+
+  // El modo viene de /health; si /train o /score reportan cron, lo recordamos.
+  const mode = cronDetected ? 'CRON' : getMode(health.data)
+  const modeLabel = mode === 'CRON' ? 'Cron Job / Render' : mode === 'API' ? 'API / En vivo' : 'Por confirmar'
+  const modeSub = mode === 'CRON'
+    ? 'Entrenamiento y scoring programados'
+    : mode === 'API'
+      ? 'Entrenamiento y scoring en vivo'
+      : 'Verifica el servicio IA'
 
   function resetMessages() {
     setActionError('')
+    setActionInfo('')
     setActionMessage('')
   }
 
@@ -219,9 +321,19 @@ function IaPipelineSection() {
     try {
       const result = await health.refetch()
       const info = getHealthInfo(result)
+      const detectedMode = getMode(result)
+      if (detectedMode === 'CRON') {
+        setCronDetected(true)
+      }
       setActionMessage(
         info.online
-          ? 'Servicio de IA operativo. Modelo disponible para entrenar y scorear.'
+          ? `Servicio de IA operativo${
+              detectedMode === 'CRON'
+                ? ' en modo Cron Job / Render.'
+                : detectedMode === 'API'
+                  ? ' en modo API / en vivo.'
+                  : '.'
+            }`
           : `Servicio de IA respondió con estado "${info.status}".`,
       )
     } catch (error) {
@@ -235,11 +347,22 @@ function IaPipelineSection() {
     resetMessages()
     setTraining(true)
     try {
-      await trainModel()
-      await Promise.allSettled([metrics.refetch(), health.refetch()])
-      setActionMessage('Entrenamiento ejecutado. Métricas actualizadas desde /api/ml/metrics.')
+      const result = await trainModel()
+      if (isCronResponse(result)) {
+        setCronDetected(true)
+        setActionInfo(CRON_TRAIN_MESSAGE)
+      } else {
+        await Promise.allSettled([metrics.refetch(), health.refetch()])
+        setActionMessage('Entrenamiento ejecutado. Métricas actualizadas desde Neon (/api/ml/metrics).')
+      }
     } catch (error) {
-      setActionError(getErrorMessage(error))
+      // 202/409 → modo Cron Job: mensaje amigable, no error crítico.
+      if (isCronResponse(error.payload, error.status)) {
+        setCronDetected(true)
+        setActionInfo(CRON_TRAIN_MESSAGE)
+      } else {
+        setActionError(getErrorMessage(error))
+      }
     } finally {
       setTraining(false)
     }
@@ -249,11 +372,22 @@ function IaPipelineSection() {
     resetMessages()
     setScoring(true)
     try {
-      await scoreModel()
-      await Promise.allSettled([predictions.refetch(), metrics.refetch()])
-      setActionMessage('Scoring ejecutado. Resultados actualizados desde /api/ml/predictions.')
+      const result = await scoreModel()
+      if (isCronResponse(result)) {
+        setCronDetected(true)
+        setActionInfo(CRON_SCORE_MESSAGE)
+      } else {
+        await Promise.allSettled([predictions.refetch(), metrics.refetch()])
+        setActionMessage('Scoring ejecutado. Predicciones actualizadas desde Neon (/api/ml/predictions).')
+      }
     } catch (error) {
-      setActionError(getErrorMessage(error))
+      // 202/409 → el scoring batch corre en el cron, no en vivo.
+      if (isCronResponse(error.payload, error.status)) {
+        setCronDetected(true)
+        setActionInfo(CRON_SCORE_MESSAGE)
+      } else {
+        setActionError(getErrorMessage(error))
+      }
     } finally {
       setScoring(false)
     }
@@ -261,19 +395,29 @@ function IaPipelineSection() {
 
   async function handleRefreshMetrics() {
     resetMessages()
-    setRefreshing(true)
+    setRefreshingMetrics(true)
     try {
-      await Promise.allSettled([metrics.refetch(), predictions.refetch(), health.refetch()])
-      setActionMessage('Métricas, predicciones y estado del servicio sincronizados.')
+      await Promise.allSettled([metrics.refetch(), health.refetch()])
+      setActionMessage('Métricas y estado del servicio sincronizados desde Neon.')
     } catch (error) {
       setActionError(getErrorMessage(error))
     } finally {
-      setRefreshing(false)
+      setRefreshingMetrics(false)
     }
   }
 
-  const metricsLoading = metrics.loading
-  const metricsError = metrics.error
+  async function handleRefreshPredictions() {
+    resetMessages()
+    setRefreshingPredictions(true)
+    try {
+      await predictions.refetch()
+      setActionMessage('Predicciones sincronizadas desde Neon (/api/ml/predictions).')
+    } catch (error) {
+      setActionError(getErrorMessage(error))
+    } finally {
+      setRefreshingPredictions(false)
+    }
+  }
 
   return (
     <section className="ia-pipeline" id="ia-pipeline">
@@ -284,18 +428,23 @@ function IaPipelineSection() {
             <div className="col-12 col-lg-7">
               <p className="ia-pipeline__eyebrow">Evaluación Parcial 3 · Pipeline de IA</p>
               <h2 className="ia-pipeline__title">Pipeline IA</h2>
-              <code className="ia-pipeline__endpoint">/api/ml/*</code>
+              <div className="ia-pipeline__header-tags">
+                <code className="ia-pipeline__endpoint">/api/ml/*</code>
+                {mode === 'CRON' && (
+                  <span className="ia-pipeline__mode-pill">Modo Cron Job / Render</span>
+                )}
+              </div>
               <p className="ia-pipeline__api-note">
-                Integración entre el frontend, el backend Spring Boot y el módulo de Machine Learning.
-                El frontend <strong>nunca</strong> llama al servicio Python directamente: solo consume
-                los endpoints <strong>/api/ml/health</strong>, <strong>/train</strong>, <strong>/score</strong>,
-                {' '}<strong>/metrics</strong> y <strong>/predictions</strong> del backend.
+                Arquitectura final: <strong>EntrenamientoAI</strong> corre como Render Cron Job, escribe
+                resultados en <strong>Neon PostgreSQL</strong> y el backend Spring Boot los expone vía
+                {' '}<strong>/api/ml/*</strong>. El frontend <strong>nunca</strong> llama a Python directamente:
+                solo lee el estado, las métricas y las predicciones del backend.
               </p>
             </div>
             <div className="col-12 col-lg-5 text-lg-end">
               <p className="ia-pipeline__intro">
-                Verifica el servicio, entrena el modelo, ejecuta el scoring y monitorea las métricas de
-                rendimiento del clasificador en tiempo real.
+                Verifica el servicio, revisa las métricas y predicciones publicadas en Neon. En modo Cron Job,
+                entrenar y scorear se agendan en Render; aquí se monitorea el resultado.
               </p>
               <div className="ia-pipeline__header-actions">
                 <button
@@ -312,7 +461,7 @@ function IaPipelineSection() {
                   onClick={() => { handleTrain().catch(() => {}) }}
                   disabled={busy}
                 >
-                  {training ? 'Entrenando...' : 'Entrenar modelo'}
+                  {training ? 'Enviando...' : 'Entrenar modelo'}
                 </button>
                 <button
                   className="ia-pipeline__ghost-action"
@@ -320,7 +469,15 @@ function IaPipelineSection() {
                   onClick={() => { handleScore().catch(() => {}) }}
                   disabled={busy}
                 >
-                  {scoring ? 'Ejecutando...' : 'Ejecutar scoring'}
+                  {scoring ? 'Enviando...' : 'Ejecutar scoring'}
+                </button>
+                <button
+                  className="ia-pipeline__ghost-action"
+                  type="button"
+                  onClick={() => { handleRefreshPredictions().catch(() => {}) }}
+                  disabled={busy}
+                >
+                  {refreshingPredictions ? 'Actualizando...' : 'Actualizar predicciones'}
                 </button>
                 <button
                   className="ia-pipeline__primary-action"
@@ -328,18 +485,45 @@ function IaPipelineSection() {
                   onClick={() => { handleRefreshMetrics().catch(() => {}) }}
                   disabled={busy}
                 >
-                  {refreshing ? 'Actualizando...' : 'Actualizar métricas'}
+                  {refreshingMetrics ? 'Actualizando...' : 'Actualizar métricas'}
                 </button>
               </div>
             </div>
           </div>
 
           {actionError && <div className="ia-pipeline__alert">{actionError}</div>}
+          {actionInfo && <div className="ia-pipeline__info">{actionInfo}</div>}
           {actionMessage && <div className="ia-pipeline__success">{actionMessage}</div>}
 
-          {/* ── Estado servicio + última ejecución ────────────────────── */}
+          {/* ── Resumen de integración (modo / última ejecución / datos) ── */}
+          <div className="ia-pipeline__integration" aria-label="Arquitectura de integración">
+            <article className="ia-pipeline__integration-card ia-pipeline__integration-card--mode">
+              <span className="ia-pipeline__card-eyebrow">Modo de integración</span>
+              <strong>{modeLabel}</strong>
+              <span className="ia-pipeline__integration-sub">{modeSub}</span>
+            </article>
+            <article className="ia-pipeline__integration-card">
+              <span className="ia-pipeline__card-eyebrow">Última ejecución detectada</span>
+              <strong>{health.loading || metricsLoading ? '···' : formatDateTime(lastRun.timestamp)}</strong>
+              <span className="ia-pipeline__integration-sub">Fuente: Neon PostgreSQL</span>
+            </article>
+            <article className="ia-pipeline__integration-card">
+              <span className="ia-pipeline__card-eyebrow">Métricas desde Neon</span>
+              <strong>{metricsLoading ? '···' : metricsAvailable ? 'Disponibles' : 'Sin datos'}</strong>
+              <span className="ia-pipeline__integration-sub">
+                {lastRun.version ? `Modelo ${lastRun.version}` : 'GET /api/ml/metrics'}
+              </span>
+            </article>
+            <article className="ia-pipeline__integration-card">
+              <span className="ia-pipeline__card-eyebrow">Predicciones disponibles</span>
+              <strong>{predictions.loading ? '···' : predictionsTotal}</strong>
+              <span className="ia-pipeline__integration-sub">GET /api/ml/predictions</span>
+            </article>
+          </div>
+
+          {/* ── Estado servicio + última ejecución detallada ──────────── */}
           <div className="row g-3 mb-3">
-            <div className="col-12 col-lg-6">
+            <div className="col-12 col-lg-5">
               <article className="ia-pipeline__status-card">
                 <div className="ia-pipeline__status-head">
                   <span className="ia-pipeline__card-eyebrow">Estado del servicio ML</span>
@@ -357,21 +541,25 @@ function IaPipelineSection() {
                     ? 'Consultando /api/ml/health...'
                     : health.error
                       ? getErrorMessage(health.error)
-                      : healthInfo.detail || 'Servicio de inferencia conectado al backend.'}
+                      : healthInfo.detail || 'Backend conectado a Neon, exponiendo los resultados del pipeline.'}
                 </p>
                 <code className="ia-pipeline__card-endpoint">GET /api/ml/health</code>
               </article>
             </div>
 
-            <div className="col-12 col-lg-6">
+            <div className="col-12 col-lg-7">
               <article className="ia-pipeline__status-card">
                 <span className="ia-pipeline__card-eyebrow">Última ejecución del pipeline</span>
-                <strong className="ia-pipeline__last-run-time">{formatDateTime(lastRun.timestamp)}</strong>
+                <strong className="ia-pipeline__last-run-time">
+                  {metricsLoading ? '···' : formatDateTime(lastRun.timestamp)}
+                </strong>
                 <div className="ia-pipeline__last-run-meta">
-                  <span>Versión: <strong>{lastRun.version || '—'}</strong></span>
+                  <span>Modelo: <strong>{lastRun.model || lastRun.version || '—'}</strong></span>
+                  <span>Duración: <strong>{lastRun.duration || '—'}</strong></span>
                   <span>Muestras: <strong>{lastRun.samples ?? '—'}</strong></span>
+                  <span>Fuente: <strong>{lastRun.source || 'Neon PostgreSQL'}</strong></span>
                 </div>
-                <code className="ia-pipeline__card-endpoint">GET /api/ml/metrics</code>
+                <code className="ia-pipeline__card-endpoint">GET /api/ml/metrics · Neon</code>
               </article>
             </div>
           </div>
@@ -438,7 +626,7 @@ function IaPipelineSection() {
                   </div>
                 ) : (
                   <div className="ia-pipeline__empty">
-                    <p>Sin matriz de confusión disponible. Entrena el modelo para generarla.</p>
+                    <p>Sin matriz de confusión en Neon todavía. La genera la próxima corrida del Cron Job.</p>
                   </div>
                 )}
               </article>
@@ -446,15 +634,16 @@ function IaPipelineSection() {
 
             <div className="col-12 col-lg-7">
               <article className="ia-pipeline__panel ia-pipeline__panel--legend">
-                <span className="ia-pipeline__card-eyebrow">Lectura del pipeline</span>
+                <span className="ia-pipeline__card-eyebrow">Flujo de la arquitectura</span>
                 <ul className="ia-pipeline__legend-list">
-                  <li><strong>Verificar servicio IA</strong> → consulta el estado del modelo (<code>/health</code>).</li>
-                  <li><strong>Entrenar modelo</strong> → reentrena y recalcula métricas (<code>/train</code>).</li>
-                  <li><strong>Ejecutar scoring</strong> → genera predicciones sobre el dataset (<code>/score</code>).</li>
-                  <li><strong>Actualizar métricas</strong> → sincroniza métricas y resultados (<code>/metrics</code>, <code>/predictions</code>).</li>
+                  <li><strong>Render Cron Job</strong> ejecuta <code>EntrenamientoAI</code> de forma programada.</li>
+                  <li>Escribe métricas y predicciones en <strong>Neon PostgreSQL</strong>.</li>
+                  <li>El <strong>backend</strong> Spring Boot expone esos resultados en <code>/api/ml/*</code>.</li>
+                  <li>El <strong>frontend</strong> solo lee: <code>/health</code>, <code>/metrics</code>, <code>/predictions</code>.</li>
                 </ul>
                 <p className="ia-pipeline__legend-note">
-                  Sesión por cookie segura del backend. No se almacenan tokens ni secretos en el navegador.
+                  Entrenar / scorear en modo Cron responden 202/409: la corrida la agenda Render (Trigger Run).
+                  Sesión por cookie; sin tokens en el navegador.
                 </p>
               </article>
             </div>
@@ -464,16 +653,16 @@ function IaPipelineSection() {
           <article className="ia-pipeline__table-card">
             <div className="ia-pipeline__table-header">
               <div>
-                <strong>{predictions.loading ? 'Cargando resultados' : `${predictionRows.length} resultados`}</strong>
-                <span>{predictions.loading ? 'Consultando /api/ml/predictions...' : 'Predicciones scoreadas por el modelo'}</span>
+                <strong>{predictions.loading ? 'Cargando resultados' : `${predictionsTotal} resultados`}</strong>
+                <span>{predictions.loading ? 'Consultando /api/ml/predictions...' : 'Predicciones publicadas en Neon'}</span>
               </div>
               <button
                 className="ia-pipeline__ghost-action"
                 type="button"
-                onClick={() => { handleScore().catch(() => {}) }}
+                onClick={() => { handleRefreshPredictions().catch(() => {}) }}
                 disabled={busy}
               >
-                {scoring ? 'Ejecutando...' : 'Ejecutar scoring'}
+                {refreshingPredictions ? 'Actualizando...' : 'Actualizar predicciones'}
               </button>
             </div>
 
@@ -491,14 +680,14 @@ function IaPipelineSection() {
             {!predictions.loading && !predictions.error && predictionRows.length === 0 && (
               <div className="ia-pipeline__empty">
                 <strong>Sin predicciones todavía.</strong>
-                <p>Ejecuta el scoring para que el modelo genere resultados sobre el dataset configurado.</p>
+                <p>Aún no hay resultados en Neon. El scoring batch los genera en la próxima corrida del Render Cron Job.</p>
                 <button
                   className="ia-pipeline__primary-action"
                   type="button"
-                  onClick={() => { handleScore().catch(() => {}) }}
+                  onClick={() => { handleRefreshPredictions().catch(() => {}) }}
                   disabled={busy}
                 >
-                  {scoring ? 'Ejecutando...' : 'Ejecutar scoring'}
+                  {refreshingPredictions ? 'Actualizando...' : 'Actualizar predicciones'}
                 </button>
               </div>
             )}
