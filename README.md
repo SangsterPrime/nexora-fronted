@@ -34,6 +34,7 @@ NEXORA fue desarrollado por Joel Sangster como proyecto académico/fullstack, in
 - `/app/solicitudes`: módulo preparado para solicitudes de compra.
 - `/app/cotizaciones`: módulo preparado para cotizaciones.
 - `/app/pipelines`: módulo preparado para pipelines.
+- `/app/ia`: vista "Pipeline IA" con la integración del módulo de Machine Learning.
 
 ## Desarrollo local
 
@@ -133,10 +134,65 @@ Backend esperado en Spring Boot:
 - `/api/ordenes-compra`
 - `/api/pipelines`
 - `/api/pipeline-ejecuciones`
+- `/api/ml/*` (módulo de IA, ver más abajo)
 
 La base de API vive en `src/config/api.js`, lee `VITE_API_URL` y permite valor vacío para usar el proxy same-origin de Vercel. `src/services/api.js` usa `credentials: 'include'` para enviar cookies/sesión.
 
 La landing muestra una verificación visual del backend consultando `/api/health` en producción o `${VITE_API_URL}/api/health` en desarrollo local.
+
+## Módulo de IA / Pipeline IA (Evaluación Parcial 3)
+
+La vista `/app/ia` ("Pipeline IA" en el menú lateral) integra el frontend con el backend y el módulo de Machine Learning.
+
+Importante: **el frontend nunca llama directamente al servicio Python**. Solo consume los endpoints `/api/ml/*` expuestos por el backend Spring Boot, que reenvía internamente al pipeline de IA. La sesión viaja por cookie (`credentials: 'include'`); no se guardan tokens ni secretos en `localStorage`/`sessionStorage`.
+
+El cliente vive en `src/services/mlApi.js`:
+
+| Función | Método | Endpoint |
+| --- | --- | --- |
+| `getMlHealth` | GET | `/api/ml/health` |
+| `trainModel` | POST | `/api/ml/train` |
+| `scoreModel` | POST | `/api/ml/score` |
+| `getMetrics` | GET | `/api/ml/metrics` |
+| `getPredictions` | GET | `/api/ml/predictions` |
+
+La vista muestra:
+
+- Tarjetas de métricas: **Accuracy, Recall, Precision, F1 Score, ROC-AUC y Gini**.
+- **Matriz de confusión** (TN / FP / FN / TP).
+- **Estado del servicio ML** (operativo / offline) y **última ejecución** del pipeline.
+- **Tabla de predicciones/resultados** scoreados por el modelo.
+- Botones: **Verificar servicio IA**, **Entrenar modelo**, **Ejecutar scoring** y **Actualizar métricas**, con estados de carga, error y éxito.
+
+El parseo de las respuestas es defensivo: acepta métricas en rango 0–1 o en porcentaje, distintas variantes de nombres (`rocAuc` / `roc_auc` / `auc`, `f1` / `f1Score`, etc.) y la matriz de confusión como arreglo `[[TN, FP], [FN, TP]]` o como campos sueltos (`tn`, `fp`, `fn`, `tp`).
+
+### Cómo se prueba
+
+1. Backend local en Spring Boot con los endpoints `/api/ml/*` disponibles.
+2. Crear `.env` con `VITE_API_URL=http://localhost:8080` y levantar el frontend con `pnpm dev`.
+3. Iniciar sesión y entrar a `/app/ia` desde el menú "Pipeline IA".
+4. Usar los botones en orden: **Verificar servicio IA** → **Entrenar modelo** → **Ejecutar scoring** → **Actualizar métricas**.
+5. Si el backend aún no publica `/api/ml/*`, la vista muestra mensajes de error controlados (por ejemplo HTTP 404) sin romper la UI.
+
+Respuestas esperadas (ejemplo):
+
+```json
+// GET /api/ml/health
+{ "status": "UP", "model": "credit-risk", "version": "v1" }
+
+// GET /api/ml/metrics
+{
+  "accuracy": 0.92, "recall": 0.88, "precision": 0.90,
+  "f1": 0.89, "rocAuc": 0.95, "gini": 0.90,
+  "confusionMatrix": [[120, 8], [10, 95]],
+  "lastRun": "2026-06-24T12:00:00Z", "modelVersion": "v1", "samples": 233
+}
+
+// GET /api/ml/predictions
+{ "content": [ { "id": 1, "score": 0.8123, "probability": 0.81, "prediction": "1" } ] }
+```
+
+Pruebas automatizadas: `src/test/services/mlApi.spec.jsx` cubre los endpoints del cliente y `src/test/pages/AppPages.spec.jsx` valida el render de la vista. Ejecuta `pnpm test`.
 
 ## Prueba móvil
 

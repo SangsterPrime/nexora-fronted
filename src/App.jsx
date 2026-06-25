@@ -8,6 +8,7 @@ import Proveedores from './pages/app/Proveedores'
 import Solicitudes from './pages/app/Solicitudes'
 import Cotizaciones from './pages/app/Cotizaciones'
 import Pipelines from './pages/app/Pipelines'
+import Ia from './pages/app/Ia'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/app/solicitudes" element={<ProtectedRoute><Solicitudes /></ProtectedRoute>} />
           <Route path="/app/cotizaciones" element={<ProtectedRoute><Cotizaciones /></ProtectedRoute>} />
           <Route path="/app/pipelines" element={<ProtectedRoute><Pipelines /></ProtectedRoute>} />
+          <Route path="/app/ia" element={<ProtectedRoute><Ia /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import Cotizaciones from '../../pages/app/Cotizaciones'
 import Dashboard from '../../pages/app/Dashboard'
+import Ia from '../../pages/app/Ia'
 import Pipelines from '../../pages/app/Pipelines'
 import Proveedores from '../../pages/app/Proveedores'
 import Solicitudes from '../../pages/app/Solicitudes'
@@ -36,6 +37,16 @@ describe('private app pages', () => {
 
     expect(screen.getByRole('heading', { name: 'Pipelines', level: 1 })).not.toBeNull()
     expect(screen.getByText('/api/pipelines')).not.toBeNull()
+  })
+
+  it('renders Pipeline IA section with ML actions', () => {
+    spyOn(window, 'fetch').and.returnValue(jsonResponse({ status: 'UP' }))
+    renderWithAuth(<Ia />)
+
+    expect(screen.getByRole('heading', { name: 'Pipeline IA', level: 1 })).not.toBeNull()
+    expect(screen.getByText('/api/ml/*')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Verificar servicio IA' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Entrenar modelo' })).not.toBeNull()
   })
 
   it('renders providers returned by the mocked backend', async () => {

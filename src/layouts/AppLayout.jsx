@@ -10,6 +10,7 @@ const appLinks = [
   ['Solicitudes', '/app/solicitudes'],
   ['Cotizaciones', '/app/cotizaciones'],
   ['Pipelines', '/app/pipelines'],
+  ['Pipeline IA', '/app/ia'],
 ]
 
 function AppLayout({ children, eyebrow = 'NEXORA APP', title, description }) {
