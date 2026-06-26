@@ -446,14 +446,15 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
 
       <div className="res__two-col" style={{ marginBottom: '1.5rem' }}>
         <div className="res__card">
-          <h3 className="res__card-title">Distribución por segmento</h3>
+          <h3 className="res__card-title">Distribución por segmento de riesgo</h3>
+          <p className="res__chart-note">¿Cuántos clientes están en cada nivel? ALTO = contacto urgente.</p>
           <div className="res__chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={pieData} cx="50%" cy="48%" innerRadius="40%" outerRadius="68%" paddingAngle={3} dataKey="value">
                   {pieData.map((d, i) => <Cell key={i} fill={d.fill} stroke="transparent" />)}
                 </Pie>
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [`${v} clientes`, n]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [`${v} clientes (${total ? ((v/total)*100).toFixed(1) : 0}%)`, n]} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '0.78rem', color: C.muted }} />
               </PieChart>
             </ResponsiveContainer>
@@ -461,7 +462,7 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
         </div>
         <div className="res__card">
           <h3 className="res__card-title">Histograma: Probabilidad de abandono</h3>
-          <p className="res__chart-note">¿Cuántos clientes caen en cada rango de riesgo?</p>
+          <p className="res__chart-note">¿Cuántos clientes caen en cada rango de riesgo? (0–10%, 10–20%, …)</p>
           <div className="res__chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={histData} margin={{ bottom: 0 }}>
@@ -477,6 +478,70 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
           </div>
         </div>
       </div>
+
+      {/* Gráfico: acciones recomendadas + promedio reclamos por segmento */}
+      {(() => {
+        const accionMap = {}
+        scoreados.forEach(c => {
+          const a = c.accionRetencion || 'Sin acción'
+          accionMap[a] = (accionMap[a] || 0) + 1
+        })
+        const accionData = Object.entries(accionMap)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([name, cantidad]) => ({ name: name.length > 24 ? name.slice(0, 22) + '…' : name, cantidad, fill: C.purple }))
+
+        const promReclamos = ['ALTO','MEDIO','BAJO'].map(seg => {
+          const grupo = scoreados.filter(c => c.segmentoRiesgo === seg)
+          const prom  = grupo.length ? grupo.reduce((s, c) => s + (c.reclamos || 0), 0) / grupo.length : 0
+          return { name: seg, promedio: Number(prom.toFixed(2)), fill: seg === 'ALTO' ? C.alto : seg === 'MEDIO' ? C.medio : C.bajo }
+        }).filter(d => d.promedio > 0)
+
+        return (
+          <div className="res__two-col" style={{ marginBottom: '1.5rem' }}>
+            {accionData.length > 0 && (
+              <div className="res__card">
+                <h3 className="res__card-title">Acciones recomendadas más frecuentes</h3>
+                <p className="res__chart-note">¿Qué acciones de retención sugiere el modelo con más frecuencia?</p>
+                <div className="res__chart-wrap res__chart-wrap--md">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={accionData} layout="vertical" margin={{ left: 8, right: 24 }}>
+                      <CartesianGrid {...GRID_PROPS} horizontal={false} />
+                      <XAxis type="number" {...AXIS_PROPS} />
+                      <YAxis type="category" dataKey="name" {...AXIS_PROPS} width={140} tick={{ fill: C.muted, fontSize: 10 }} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${v} clientes`, 'Cantidad']} />
+                      <Bar dataKey="cantidad" radius={[0,4,4,0]} name="Clientes">
+                        {accionData.map((_, i) => <Cell key={i} fill={[C.purple, C.blue, C.cyan, C.bajo, C.medio, C.alto][i % 6]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+            {promReclamos.length > 0 && (
+              <div className="res__card">
+                <h3 className="res__card-title">Promedio de reclamos por segmento</h3>
+                <p className="res__chart-note">
+                  Los reclamos son el predictor nº 1 (32% de importancia). A más reclamos, mayor riesgo.
+                </p>
+                <div className="res__chart-wrap res__chart-wrap--md">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={promReclamos} margin={{ bottom: 0 }}>
+                      <CartesianGrid {...GRID_PROPS} vertical={false} />
+                      <XAxis dataKey="name" {...AXIS_PROPS} />
+                      <YAxis {...AXIS_PROPS} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${v} reclamos en promedio`, 'Promedio']} />
+                      <Bar dataKey="promedio" radius={[5,5,0,0]} name="Prom. reclamos">
+                        {promReclamos.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="res__card">
         <div className="res__card-header">
@@ -881,95 +946,228 @@ function TabKpis({ kpiData, kpiError, kpiLoading }) {
   )
 }
 
-// ── TAB: EJECUCIONES ──────────────────────────────────────────────────────────
+// ── TAB: EJECUCIONES (PIPELINES) ─────────────────────────────────────────────
+
+const EJEC_PAGE = 10
+
+function ejecColor(estado) {
+  if (['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA'].includes(estado)) return C.bajo
+  if (['EN_EJECUCION','EN_PROCESO','PENDIENTE'].includes(estado))       return C.medio
+  return C.alto
+}
 
 function TabEjecuciones({ ejecData, ejecError, ejecLoading }) {
+  const [pagina, setPagina] = useState(0)
+  const [filtro, setFiltro] = useState('TODOS')
+
   if (ejecLoading) return <Loading label="ejecuciones" />
   if (ejecError)   return <SectionError msg="No se pudo conectar con /api/pipeline-ejecuciones." />
 
   const ejecs = Array.isArray(ejecData) ? ejecData : []
-  if (ejecs.length === 0) return <p className="res__empty">Sin ejecuciones registradas.</p>
+  if (ejecs.length === 0) {
+    return (
+      <div className="res__empty-state">
+        <p className="res__empty-title">Sin ejecuciones todavía</p>
+        <p className="res__empty-desc">
+          Los pipelines se ejecutan automáticamente a través del Cron Job en Render o manualmente
+          desde el panel de administración. Cada ejecución queda registrada aquí con su estado,
+          duración y registros procesados.
+        </p>
+      </div>
+    )
+  }
 
-  const estados = {}
-  ejecs.forEach(e => { estados[e.estado] = (estados[e.estado] || 0) + 1 })
-  const pieData = Object.entries(estados).map(([k, v]) => ({
-    name: k, value: v,
-    fill: (['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA'].includes(k)) ? C.bajo
-        : (['EN_EJECUCION','EN_PROCESO','PENDIENTE'].includes(k)) ? C.medio
-        : C.alto
+  // ── Métricas base ──
+  const exitosas   = ejecs.filter(e => ['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA'].includes(e.estado)).length
+  const conErrores = ejecs.filter(e => (e.erroresEncontrados || 0) > 0).length
+  const duraciones = ejecs.filter(e => e.duracionMs != null)
+  const avgDur     = duraciones.length ? duraciones.reduce((s, e) => s + e.duracionMs, 0) / duraciones.length : 0
+  const totalRecs  = ejecs.reduce((s, e) => s + (e.registrosProcesados || 0), 0)
+
+  // ── Pie: estado ──
+  const estadoMap = {}
+  ejecs.forEach(e => { estadoMap[e.estado] = (estadoMap[e.estado] || 0) + 1 })
+  const pieData = Object.entries(estadoMap).map(([k, v]) => ({ name: k, value: v, fill: ejecColor(k) }))
+
+  // ── Barras: últimas 10 ejecuciones — duración + registros ──
+  const ultimas10 = [...ejecs]
+    .sort((a, b) => new Date(b.iniciadoEn) - new Date(a.iniciadoEn))
+    .slice(0, 10)
+    .reverse()
+    .map(e => ({
+      name: `#${e.id}`,
+      durSeg: e.duracionMs != null ? Number((e.duracionMs / 1000).toFixed(2)) : 0,
+      registros: e.registrosProcesados || 0,
+      fill: ejecColor(e.estado),
+    }))
+
+  // ── Barras: registros procesados por pipeline ──
+  const porPipeline = {}
+  ejecs.forEach(e => {
+    const k = e.pipelineNombre || `Pipeline #${e.pipelineId}`
+    if (!porPipeline[k]) porPipeline[k] = { total: 0, runs: 0 }
+    porPipeline[k].total += (e.registrosProcesados || 0)
+    porPipeline[k].runs  += 1
+  })
+  const pipelineData = Object.entries(porPipeline).map(([name, v]) => ({
+    name: name.length > 22 ? name.slice(0, 20) + '…' : name,
+    registros: v.total,
+    runs: v.runs,
   }))
 
-  const exitosas = ejecs.filter(e => ['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA'].includes(e.estado)).length
-  const avgDur = ejecs.filter(e => e.duracionMs).reduce((s, e) => s + e.duracionMs, 0) / (ejecs.filter(e => e.duracionMs).length || 1)
+  // ── Tabla filtrada + paginada ──
+  const filtrados = filtro === 'TODOS' ? ejecs : ejecs.filter(e => {
+    if (filtro === 'EXITOSO') return ['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA'].includes(e.estado)
+    if (filtro === 'ERROR')   return !['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA','EN_EJECUCION','EN_PROCESO','PENDIENTE'].includes(e.estado)
+    return ['EN_EJECUCION','EN_PROCESO','PENDIENTE'].includes(e.estado)
+  })
+  const totalPages = Math.ceil(filtrados.length / EJEC_PAGE)
+  const page = Math.min(pagina, Math.max(0, totalPages - 1))
+  const visibles = filtrados.slice(page * EJEC_PAGE, (page + 1) * EJEC_PAGE)
 
   return (
     <div>
+      {/* KPIs */}
       <div className="res__stat-grid" style={{ marginBottom: '1.5rem' }}>
-        <StatCard label="Total ejecuciones" value={ejecs.length} sub="pipeline runs" accent="blue" />
-        <StatCard label="Exitosas" value={exitosas} sub={`${ejecs.length ? ((exitosas/ejecs.length)*100).toFixed(0) : 0}% de éxito`} accent="green" />
-        <StatCard label="Duración media" value={`${(avgDur/1000).toFixed(1)}s`} sub="segundos por ejecución" accent="cyan" />
-        <StatCard label="Con errores" value={ejecs.filter(e => (e.erroresEncontrados || 0) > 0).length} sub="runs con errores" accent="danger" />
+        <StatCard label="Total ejecuciones"    value={ejecs.length}                   sub="pipeline runs registrados"           accent="blue"   />
+        <StatCard label="Exitosas"             value={exitosas}                        sub={`${ejecs.length ? ((exitosas/ejecs.length)*100).toFixed(0) : 0}% tasa de éxito`} accent="green" />
+        <StatCard label="Duración promedio"    value={`${(avgDur/1000).toFixed(1)}s`} sub="por ejecución"                       accent="cyan"   />
+        <StatCard label="Registros procesados" value={totalRecs.toLocaleString()}      sub="filas procesadas en total"           accent="amber"  />
+        <StatCard label="Con errores"          value={conErrores}                      sub="runs con al menos 1 error"           accent="danger" />
       </div>
 
+      <InfoBox title="¿Qué es un pipeline y para qué sirven estos resultados?">
+        Un pipeline es una secuencia automatizada de pasos que procesa datos: lee registros, los transforma,
+        los guarda en la base de datos y calcula métricas. Cada fila de la tabla es un <strong>run</strong> (una corrida completa).
+        Estos resultados permiten detectar pipelines lentos, con errores repetidos o que procesan pocos registros.
+      </InfoBox>
+
+      {/* Gráficos */}
       <div className="res__two-col" style={{ marginBottom: '1.5rem' }}>
         <div className="res__card">
-          <h3 className="res__card-title">Estado de las ejecuciones</h3>
+          <h3 className="res__card-title">Resultados por estado</h3>
+          <p className="res__chart-note">¿Cuántas ejecuciones terminaron bien, fallaron o están pendientes?</p>
           <div className="res__chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="48%" innerRadius="40%" outerRadius="68%" paddingAngle={3} dataKey="value">
+                <Pie data={pieData} cx="50%" cy="46%" innerRadius="38%" outerRadius="66%" paddingAngle={3} dataKey="value">
                   {pieData.map((d, i) => <Cell key={i} fill={d.fill} stroke="transparent" />)}
                 </Pie>
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [`${v} ejecuciones`, n]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [`${v} runs`, n]} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '0.78rem', color: C.muted }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
+
         <div className="res__card">
-          <h3 className="res__card-title">¿Qué es una ejecución de pipeline?</h3>
-          <div className="res__glossary-grid res__glossary-grid--single">
-            <div className="res__glossary-item"><span className="res__glossary-dot" style={{ background: C.bajo }} /><div><strong>EXITOSO / COMPLETADO</strong><p>El pipeline corrió sin errores y procesó todos los registros correctamente.</p></div></div>
-            <div className="res__glossary-item"><span className="res__glossary-dot" style={{ background: C.medio }} /><div><strong>EN_EJECUCION / PENDIENTE</strong><p>El pipeline está corriendo o esperando ser ejecutado. No se puede lanzar otro hasta que termine.</p></div></div>
-            <div className="res__glossary-item"><span className="res__glossary-dot" style={{ background: C.alto }} /><div><strong>FALLIDO / ERROR</strong><p>Ocurrió un error durante la ejecución. Revisa el campo Errores y los logs de Render.</p></div></div>
-            <div className="res__glossary-item"><span className="res__glossary-dot" style={{ background: C.muted }} /><div><strong>Registros procesados</strong><p>Cantidad de filas (clientes, solicitudes, etc.) que el pipeline procesó en esa ejecución.</p></div></div>
+          <h3 className="res__card-title">Duración de las últimas 10 ejecuciones</h3>
+          <p className="res__chart-note">Cada barra = un run. Barras verdes = exitoso · rojas = error. El eje muestra segundos.</p>
+          <div className="res__chart-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={ultimas10} margin={{ bottom: 0, left: 0 }}>
+                <CartesianGrid {...GRID_PROPS} vertical={false} />
+                <XAxis dataKey="name" {...AXIS_PROPS} />
+                <YAxis {...AXIS_PROPS} unit="s" />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [`${v}s`, 'Duración']} />
+                <Bar dataKey="durSeg" radius={[4,4,0,0]} name="Duración (s)">
+                  {ultimas10.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
+      {pipelineData.length > 1 && (
+        <div className="res__card" style={{ marginBottom: '1.5rem' }}>
+          <h3 className="res__card-title">Registros procesados por pipeline</h3>
+          <p className="res__chart-note">Total acumulado de filas procesadas en todas las ejecuciones de cada pipeline.</p>
+          <div className="res__chart-wrap res__chart-wrap--sm">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={pipelineData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                <CartesianGrid {...GRID_PROPS} horizontal={false} />
+                <XAxis type="number" {...AXIS_PROPS} />
+                <YAxis type="category" dataKey="name" {...AXIS_PROPS} width={110} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [v, n === 'registros' ? 'Registros totales' : 'Runs']} />
+                <Bar dataKey="registros" fill={C.blue}   radius={[0,4,4,0]} name="registros" />
+                <Bar dataKey="runs"      fill={C.purple} radius={[0,4,4,0]} name="runs" />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '0.78rem', color: C.muted }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Tabla */}
       <div className="res__card">
         <div className="res__card-header">
-          <h3 className="res__card-title">Historial de pipeline runs</h3>
-          <span className="res__muted">{ejecs.length} registros</span>
+          <h3 className="res__card-title">Historial de ejecuciones</h3>
+          <div style={{ display: 'flex', gap: '0.45rem' }}>
+            {[
+              { key: 'TODOS',   label: `Todos (${ejecs.length})` },
+              { key: 'EXITOSO', label: `Exitosas (${exitosas})` },
+              { key: 'PENDING', label: `Pendientes (${ejecs.filter(e => ['EN_EJECUCION','EN_PROCESO','PENDIENTE'].includes(e.estado)).length})` },
+              { key: 'ERROR',   label: `Errores (${ejecs.filter(e => !['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA','EN_EJECUCION','EN_PROCESO','PENDIENTE'].includes(e.estado)).length})` },
+            ].map(f => (
+              <button
+                key={f.key}
+                type="button"
+                className={`res__filtro-btn ${filtro === f.key ? 'res__filtro-btn--active' : ''}`}
+                onClick={() => { setFiltro(f.key); setPagina(0) }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="table-responsive">
+        <div className="table-responsive" style={{ marginTop: '0.8rem' }}>
           <table className="table res__table align-middle mb-0">
             <thead>
               <tr>
-                <th>ID</th>
-                <th title="Nombre del pipeline ejecutado">Pipeline</th>
+                <th title="ID del run">Run</th>
+                <th title="Nombre del pipeline">Pipeline</th>
                 <th title="¿Terminó bien?">Estado</th>
-                <th title="Filas procesadas">Registros</th>
+                <th title="Filas procesadas sin error">Procesados</th>
                 <th title="Filas con error">Errores</th>
-                <th title="Tiempo total del run">Duración</th>
-                <th title="Cuándo se inició">Iniciado</th>
+                <th title="Tiempo total de ejecución">Duración</th>
+                <th title="Cuándo empezó">Inicio</th>
+                <th title="Cuándo terminó">Fin</th>
               </tr>
             </thead>
             <tbody>
-              {ejecs.map(e => (
+              {visibles.map(e => (
                 <tr key={e.id}>
-                  <td><code>#{e.id}</code></td>
-                  <td>{e.pipelineNombre || `Pipeline #${e.pipelineId}`}</td>
+                  <td><code className="res__muted">#{e.id}</code></td>
+                  <td style={{ fontWeight: 500 }}>{e.pipelineNombre || `Pipeline #${e.pipelineId}`}</td>
                   <td><StatusBadge value={e.estado} /></td>
-                  <td>{e.registrosProcesados ?? '—'}</td>
-                  <td className={e.erroresEncontrados > 0 ? 'res__danger' : ''}>{e.erroresEncontrados ?? '—'}</td>
-                  <td>{e.duracionMs != null ? `${(e.duracionMs / 1000).toFixed(2)}s` : '—'}</td>
-                  <td className="res__muted">{e.iniciadoEn ? new Date(e.iniciadoEn).toLocaleString('es-CL') : '—'}</td>
+                  <td>{e.registrosProcesados != null ? e.registrosProcesados.toLocaleString() : '—'}</td>
+                  <td className={e.erroresEncontrados > 0 ? 'res__danger' : 'res__muted'}>
+                    {e.erroresEncontrados ?? '0'}
+                  </td>
+                  <td>
+                    {e.duracionMs != null
+                      ? <span style={{ color: e.duracionMs > 10000 ? C.medio : C.bajo }}>{(e.duracionMs / 1000).toFixed(2)}s</span>
+                      : <span className="res__muted">—</span>}
+                  </td>
+                  <td className="res__muted" style={{ fontSize: '0.73rem' }}>
+                    {e.iniciadoEn ? new Date(e.iniciadoEn).toLocaleString('es-CL') : '—'}
+                  </td>
+                  <td className="res__muted" style={{ fontSize: '0.73rem' }}>
+                    {e.finalizadoEn ? new Date(e.finalizadoEn).toLocaleString('es-CL') : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="res__pagination">
+            <button type="button" className="res__page-btn" disabled={page === 0} onClick={() => setPagina(p => p - 1)}>← Anterior</button>
+            <span className="res__page-info">Página {page + 1} de {totalPages} — {filtrados.length} ejecuciones</span>
+            <button type="button" className="res__page-btn" disabled={page >= totalPages - 1} onClick={() => setPagina(p => p + 1)}>Siguiente →</button>
+          </div>
+        )}
       </div>
     </div>
   )
