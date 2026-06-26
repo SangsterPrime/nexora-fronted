@@ -1,0 +1,104 @@
+.problem-section {
+  position: relative;
+  padding: clamp(5rem, 8vw, 8rem) 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(157, 255, 0, 0.08), transparent 32%),
+    linear-gradient(180deg, #030405 0%, #06080a 100%);
+}
+
+.problem-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.035), transparent 38%, rgba(0, 240, 255, 0.035));
+}
+
+.problem-section .container {
+  position: relative;
+  z-index: 1;
+}
+
+.problem-section__eyebrow,
+.problem-section__card span {
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.problem-section__eyebrow {
+  margin: 0 0 0.9rem;
+}
+
+.problem-section__title {
+  max-width: 850px;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+
+.problem-section__title span {
+  display: block;
+  color: rgba(245, 245, 240, 0.82);
+}
+
+.problem-section__intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.problem-section__card {
+  padding: clamp(1.25rem, 2.2vw, 1.65rem);
+  border: 1px solid rgba(245, 245, 240, 0.1);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+    rgba(7, 9, 11, 0.7);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.problem-section__card span {
+  display: inline-flex;
+  margin-bottom: 1.45rem;
+  color: rgba(0, 240, 255, 0.84);
+}
+
+.problem-section__card h3 {
+  margin: 0 0 0.75rem;
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: clamp(1.8rem, 3vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+
+.problem-section__card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .problem-section {
+    padding: clamp(2.75rem, 12vw, 4rem) 0;
+  }
+
+  .problem-section__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem);
+    overflow-wrap: anywhere;
+  }
+}

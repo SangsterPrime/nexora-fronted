@@ -1,0 +1,93 @@
+.nexora-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.35rem;
+  padding: 0.88rem 1.35rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+}
+
+.nexora-button::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.nexora-button--primary {
+  border: 1px solid rgba(157, 255, 0, 0.72);
+  color: #061006;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.85), transparent 30%),
+    linear-gradient(135deg, var(--green), #66ff77);
+  box-shadow:
+    0 0 28px rgba(157, 255, 0, 0.28),
+    0 18px 54px rgba(157, 255, 0, 0.16);
+}
+
+.nexora-button--secondary {
+  border: 1px solid rgba(245, 245, 240, 0.18);
+  color: var(--text);
+  background: rgba(7, 9, 11, 0.54);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.nexora-button:hover,
+.nexora-button:focus-visible {
+  transform: translateY(-2px);
+}
+
+.nexora-button--primary:hover,
+.nexora-button--primary:focus-visible {
+  border-color: rgba(255, 255, 255, 0.88);
+  color: #041004;
+  text-decoration: none;
+  box-shadow:
+    0 0 34px rgba(157, 255, 0, 0.44),
+    0 22px 64px rgba(157, 255, 0, 0.24);
+}
+
+.nexora-button--secondary:hover,
+.nexora-button--secondary:focus-visible {
+  border-color: rgba(0, 240, 255, 0.62);
+  color: var(--cyan);
+  text-decoration: none;
+  box-shadow:
+    0 0 22px rgba(0, 240, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.nexora-button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+}
+
+@media (max-width: 575.98px) {
+  .nexora-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexora-button {
+    transition: none;
+  }
+
+  .nexora-button:hover,
+  .nexora-button:focus-visible {
+    transform: none;
+  }
+}
