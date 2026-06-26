@@ -359,8 +359,12 @@ function histColor(hi) {
   return C.alto
 }
 
+const PRED_PAGE = 15
+
 function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
-  const [filtro, setFiltro] = useState('TODOS')
+  const [filtro, setFiltro]     = useState('TODOS')
+  const [busqueda, setBusqueda] = useState('')
+  const [pagina, setPagina]     = useState(0)
   if (scoreadosLoading) return <Loading label="predicciones" />
   if (scoreadosError) return <SectionError msg="No se pudo obtener /api/ml/clientes-scoreados. Ejecuta el pipeline IA para poblar clientes_scoreados en Neon." />
 
@@ -396,7 +400,20 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
     { name: 'BAJO',  value: bajo,  fill: C.bajo },
   ]
 
-  const filtrados = filtro === 'TODOS' ? scoreados : scoreados.filter(c => c.segmentoRiesgo === filtro)
+  const filtrados = scoreados
+    .filter(c => filtro === 'TODOS' || c.segmentoRiesgo === filtro)
+    .filter(c => {
+      if (!busqueda.trim()) return true
+      const q = busqueda.toLowerCase()
+      return (
+        String(c.id ?? '').includes(q) ||
+        (c.accionRetencion || '').toLowerCase().includes(q) ||
+        String(c.reclamos ?? '').includes(q)
+      )
+    })
+  const predTotalPages = Math.ceil(filtrados.length / PRED_PAGE)
+  const predPage = Math.min(pagina, Math.max(0, predTotalPages - 1))
+  const filtradosPage = filtrados.slice(predPage * PRED_PAGE, (predPage + 1) * PRED_PAGE)
 
   return (
     <div>
@@ -470,62 +487,98 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
             </p>
           </div>
         </div>
-        <div className="res__filtros" style={{ marginTop: '0.8rem' }}>
+        <div className="res__filtros" style={{ marginTop: '0.8rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           {['TODOS', ...SEGMENTOS].map(seg => (
             <button
               key={seg}
               type="button"
               className={`res__filtro-btn ${filtro === seg ? `res__filtro-btn--${seg.toLowerCase()}` : ''}`}
-              onClick={() => setFiltro(seg)}
+              onClick={() => { setFiltro(seg); setPagina(0) }}
             >
               {seg === 'TODOS' ? `Todos (${total})` : `${seg} (${scoreados.filter(c => c.segmentoRiesgo === seg).length})`}
             </button>
           ))}
+          <input
+            type="search"
+            placeholder="Buscar por ID, acción o reclamos…"
+            value={busqueda}
+            onChange={e => { setBusqueda(e.target.value); setPagina(0) }}
+            className="res__search-input"
+          />
         </div>
         <div className="table-responsive" style={{ marginTop: '0.8rem' }}>
-          <table className="table res__table align-middle mb-0">
-            <thead>
-              <tr>
-                <th title="Número de fila">#</th>
-                <th title="Edad en años del cliente">Edad</th>
-                <th title="Antigüedad como cliente (años)">Años cliente</th>
-                <th title="Cantidad de reclamos hechos — predictor más importante (32%)">Reclamos ⚠</th>
-                <th title="Consumo de datos del último mes (GB)">Datos (GB)</th>
-                <th title="¿Tiene plan premium? Más lealtad">Plan premium</th>
-                <th title="Probabilidad de que abandone el servicio (0-100%)">Prob. abandono</th>
-                <th title="Segmento de riesgo asignado por el modelo">Segmento</th>
-                <th title="Acción de retención recomendada por el sistema">Acción recomendada</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((c, i) => (
-                <tr key={c.id ?? i}>
-                  <td className="res__muted">{i + 1}</td>
-                  <td>{c.edad ?? '—'}</td>
-                  <td>{c.anosCliente ?? '—'}</td>
-                  <td>
-                    <span className={c.reclamos > 2 ? 'res__danger' : ''}>{c.reclamos ?? '—'}</span>
-                  </td>
-                  <td>{c.usoDatosGb != null ? fmt(c.usoDatosGb, 1) : '—'}</td>
-                  <td>{c.planPremium === 1 ? <span className="res__chip">Sí</span> : <span className="res__chip res__chip--off">No</span>}</td>
-                  <td>
-                    <div className="res__prob">
-                      <div className="res__prob-bar">
-                        <div
-                          className={`res__prob-fill res__prob-fill--${(c.segmentoRiesgo || 'bajo').toLowerCase()}`}
-                          style={{ width: `${c.probAbandono != null ? (c.probAbandono * 100).toFixed(0) : 0}%` }}
-                        />
-                      </div>
-                      <span>{c.probAbandono != null ? `${(c.probAbandono * 100).toFixed(1)}%` : '—'}</span>
-                    </div>
-                  </td>
-                  <td><SegmentoBadge value={c.segmentoRiesgo} /></td>
-                  <td className="res__accion">{c.accionRetencion || '—'}</td>
+          {filtrados.length === 0 ? (
+            <p className="res__empty" style={{ padding: '1.5rem 0' }}>Sin resultados para los filtros seleccionados.</p>
+          ) : (
+            <table className="table res__table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th title="Número de fila">#</th>
+                  <th title="Edad en años del cliente">Edad</th>
+                  <th title="Antigüedad como cliente (años)">Años cliente</th>
+                  <th title="Cantidad de reclamos hechos — predictor más importante (32%)">Reclamos ⚠</th>
+                  <th title="Consumo de datos del último mes (GB)">Datos (GB)</th>
+                  <th title="¿Tiene plan premium? Más lealtad">Plan premium</th>
+                  <th title="Probabilidad de que abandone el servicio (0-100%)">Prob. abandono</th>
+                  <th title="Segmento de riesgo asignado por el modelo">Segmento</th>
+                  <th title="Acción de retención recomendada por el sistema">Acción recomendada</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtradosPage.map((c, i) => (
+                  <tr key={c.id ?? i}>
+                    <td className="res__muted">{predPage * PRED_PAGE + i + 1}</td>
+                    <td>{c.edad ?? '—'}</td>
+                    <td>{c.anosCliente ?? '—'}</td>
+                    <td>
+                      <span className={c.reclamos > 2 ? 'res__danger' : ''}>{c.reclamos ?? '—'}</span>
+                    </td>
+                    <td>{c.usoDatosGb != null ? fmt(c.usoDatosGb, 1) : '—'}</td>
+                    <td>{c.planPremium === 1 ? <span className="res__chip">Sí</span> : <span className="res__chip res__chip--off">No</span>}</td>
+                    <td>
+                      <div className="res__prob">
+                        <div className="res__prob-bar">
+                          <div
+                            className={`res__prob-fill res__prob-fill--${(c.segmentoRiesgo || 'bajo').toLowerCase()}`}
+                            style={{ width: `${c.probAbandono != null ? (c.probAbandono * 100).toFixed(0) : 0}%` }}
+                          />
+                        </div>
+                        <span>{c.probAbandono != null ? `${(c.probAbandono * 100).toFixed(1)}%` : '—'}</span>
+                      </div>
+                    </td>
+                    <td><SegmentoBadge value={c.segmentoRiesgo} /></td>
+                    <td className="res__accion">{c.accionRetencion || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
+
+        {/* Paginación */}
+        {predTotalPages > 1 && (
+          <div className="res__pagination">
+            <button
+              type="button"
+              className="res__page-btn"
+              disabled={predPage === 0}
+              onClick={() => setPagina(p => Math.max(0, p - 1))}
+            >
+              ← Anterior
+            </button>
+            <span className="res__page-info">
+              Página {predPage + 1} de {predTotalPages} — {filtrados.length} clientes
+            </span>
+            <button
+              type="button"
+              className="res__page-btn"
+              disabled={predPage >= predTotalPages - 1}
+              onClick={() => setPagina(p => Math.min(predTotalPages - 1, p + 1))}
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

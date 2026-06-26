@@ -525,3 +525,63 @@
 
 .res__risk-grid--col { grid-template-columns: 1fr; align-content: stretch; }
 .res__risk-grid--col .res__risk-card { flex: 1; }
+
+/* ── Search input ────────────────────────────────────────────────────────────── */
+
+.res__search-input {
+  margin-left: auto;
+  padding: 0.3rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(245,245,240,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(245,245,240,0.8);
+  font-size: 0.78rem;
+  outline: none;
+  width: 220px;
+  transition: border-color 0.15s;
+}
+.res__search-input:focus { border-color: rgba(129,140,248,0.4); }
+.res__search-input::placeholder { color: rgba(245,245,240,0.25); }
+
+/* ── Pagination ──────────────────────────────────────────────────────────────── */
+
+.res__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(245,245,240,0.05);
+}
+
+.res__page-btn {
+  padding: 0.3rem 0.9rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(245,245,240,0.12);
+  background: transparent;
+  color: rgba(245,245,240,0.65);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.res__page-btn:hover:not(:disabled) {
+  border-color: rgba(129,140,248,0.35);
+  color: rgba(245,245,240,0.9);
+  background: rgba(129,140,248,0.08);
+}
+.res__page-btn:disabled { opacity: 0.3; cursor: default; }
+
+.res__page-info {
+  font-size: 0.76rem;
+  color: rgba(245,245,240,0.35);
+}
+
+/* ── Chart note ──────────────────────────────────────────────────────────────── */
+
+.res__chart-note {
+  margin: 0.2rem 0 0.6rem;
+  font-size: 0.76rem;
+  color: rgba(245,245,240,0.35);
+  line-height: 1.5;
+}
