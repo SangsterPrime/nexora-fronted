@@ -43,11 +43,11 @@ const AXIS_PROPS = {
 const GRID_PROPS = { stroke: 'rgba(245,245,240,0.05)', strokeDasharray: '3 3' }
 
 const TABS = [
-  { key: 'resumen',      label: 'Resumen' },
+  { key: 'resumen',      label: 'Resumen general' },
   { key: 'predicciones', label: 'Predicciones IA' },
   { key: 'ml',           label: 'Métricas ML' },
   { key: 'kpis',         label: 'KPIs' },
-  { key: 'pipelines',    label: 'Ejecuciones' },
+  { key: 'pipelines',    label: 'Pipelines' },
 ]
 
 const SEGMENTOS = ['ALTO', 'MEDIO', 'BAJO']
@@ -176,11 +176,11 @@ function MetricGlossary() {
 
 // ── TAB: RESUMEN ─────────────────────────────────────────────────────────────
 
-function TabResumen({ provData, solData, ordData, ejecData, scoreadosData }) {
-  const provs   = arr(provData)
-  const sols    = arr(solData)
-  const ords    = arr(ordData)
-  const ejecs   = arr(ejecData)
+function TabResumen({ provData, solData, ordData, ejecData, scoreadosData, mlData }) {
+  const provs     = arr(provData)
+  const sols      = arr(solData)
+  const ords      = arr(ordData)
+  const ejecs     = arr(ejecData)
   const scoreados = arr(scoreadosData)
 
   const alto  = scoreados.filter(c => c.segmentoRiesgo === 'ALTO').length
@@ -188,50 +188,87 @@ function TabResumen({ provData, solData, ordData, ejecData, scoreadosData }) {
   const bajo  = scoreados.filter(c => c.segmentoRiesgo === 'BAJO').length
   const total = scoreados.length
 
+  const exitosas   = ejecs.filter(e => ['EXITOSO','EXITOSA','COMPLETADO','COMPLETADA'].includes(e.estado)).length
+  const ordEmitidas = ords.filter(o => ['EMITIDA','COMPLETADA'].includes(o.estado)).length
+  const provActivos = provs.filter(p => p.estado === 'ACTIVO').length
+
+  // Gráfico general — panorama completo del sistema en una sola barra
+  const resumenData = [
+    { name: 'Proveedores activos', valor: provActivos,   fill: C.bajo   },
+    { name: 'Solicitudes totales', valor: sols.length,   fill: C.cyan   },
+    { name: 'Órdenes emitidas',    valor: ordEmitidas,   fill: C.medio  },
+    { name: 'Pipelines exitosos',  valor: exitosas,      fill: C.blue   },
+    { name: 'Clientes evaluados',  valor: total,         fill: C.purple },
+    { name: 'Riesgo ALTO',         valor: alto,          fill: C.alto   },
+  ].filter(d => d.valor > 0)
+
   const riskPieData = [
-    { name: 'ALTO (≥60%)',  value: alto,  fill: C.alto },
+    { name: 'ALTO (≥60%)',    value: alto,  fill: C.alto  },
     { name: 'MEDIO (35-60%)', value: medio, fill: C.medio },
-    { name: 'BAJO (<35%)',  value: bajo,  fill: C.bajo },
+    { name: 'BAJO (<35%)',    value: bajo,  fill: C.bajo  },
   ].filter(d => d.value > 0)
 
-  const estadoSols = ['PENDIENTE','EN_PROCESO','APROBADA','RECHAZADA','COMPLETADA']
-    .map(e => ({ name: e, value: sols.filter(s => s.estado === e).length }))
-    .filter(d => d.value > 0)
-
+  const estadoSols  = ['PENDIENTE','EN_PROCESO','APROBADA','RECHAZADA','COMPLETADA']
+    .map(e => ({ name: e, value: sols.filter(s => s.estado === e).length })).filter(d => d.value > 0)
   const estadoProvs = ['ACTIVO','INACTIVO','SUSPENDIDO']
-    .map(e => ({ name: e, value: provs.filter(p => p.estado === e).length }))
-    .filter(d => d.value > 0)
-
-  const barColorProv = { ACTIVO: C.bajo, INACTIVO: C.muted, SUSPENDIDO: C.alto }
+    .map(e => ({ name: e, value: provs.filter(p => p.estado === e).length })).filter(d => d.value > 0)
+  const barColorProv = { ACTIVO: C.bajo, INACTIVO: 'rgba(245,245,240,0.2)', SUSPENDIDO: C.alto }
 
   return (
     <div>
+      {/* KPIs rápidos */}
       <div className="res__stat-grid">
-        <StatCard label="Proveedores activos" value={provs.filter(p => p.estado === 'ACTIVO').length} sub={`de ${provs.length} registrados`} accent="green" />
-        <StatCard label="Solicitudes" value={sols.length} sub={`${sols.filter(s => s.estado === 'PENDIENTE').length} pendientes`} accent="cyan" />
-        <StatCard label="Órdenes emitidas" value={ords.filter(o => ['EMITIDA','COMPLETADA'].includes(o.estado)).length} sub={`de ${ords.length} totales`} accent="amber" />
-        <StatCard label="Ejecuciones pipeline" value={ejecs.length} sub={`${ejecs.filter(e => ['EXITOSO','EXITOSA','COMPLETADO'].includes(e.estado)).length} exitosas`} accent="blue" />
+        <StatCard label="Proveedores activos"  value={provActivos}    sub={`de ${provs.length} registrados`}   accent="green"  />
+        <StatCard label="Solicitudes"           value={sols.length}    sub={`${sols.filter(s=>s.estado==='PENDIENTE').length} pendientes`} accent="cyan" />
+        <StatCard label="Órdenes emitidas"      value={ordEmitidas}    sub={`de ${ords.length} totales`}        accent="amber"  />
+        <StatCard label="Pipelines exitosos"    value={exitosas}       sub={`de ${ejecs.length} ejecuciones`}   accent="blue"   />
+        {total > 0 && <StatCard label="Clientes evaluados por IA" value={total} sub={`${alto} en riesgo ALTO`} accent="purple" />}
       </div>
 
+      {/* Gráfico panorama general */}
+      {resumenData.length > 0 && (
+        <div className="res__card" style={{ marginTop: '1.4rem' }}>
+          <h3 className="res__card-title">Panorama general del sistema</h3>
+          <p className="res__chart-note">
+            Visión consolidada: operaciones de compra + resultados del modelo de IA en un solo vistazo.
+            Las barras más altas indican mayor actividad o volumen en esa área.
+          </p>
+          <div className="res__chart-wrap res__chart-wrap--md">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={resumenData} margin={{ bottom: 0, left: 0 }}>
+                <CartesianGrid {...GRID_PROPS} vertical={false} />
+                <XAxis dataKey="name" {...AXIS_PROPS} interval={0} tick={{ fill: C.muted, fontSize: 10 }} />
+                <YAxis {...AXIS_PROPS} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [v, n]} />
+                <Bar dataKey="valor" radius={[5, 5, 0, 0]} name="Cantidad">
+                  {resumenData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Riesgo de abandono */}
       {total > 0 && (
         <>
-          <h3 className="res__subtitle" style={{ marginTop: '1.8rem' }}>Riesgo de abandono — {total} clientes scoreados por IA</h3>
-          <InfoBox title="¿Qué es el riesgo de abandono?">
-            El modelo Random Forest evaluó {total} clientes y asignó a cada uno una probabilidad de abandono.
-            Los segmentos indican qué tan urgente es actuar: <strong>ALTO</strong> requiere contacto inmediato,
-            <strong> MEDIO</strong> necesita fidelización, y <strong>BAJO</strong> sólo monitoreo estándar.
+          <h3 className="res__subtitle" style={{ marginTop: '1.8rem' }}>
+            Riesgo de abandono de clientes — {total} evaluados por IA
+          </h3>
+          <InfoBox title="¿Qué es el riesgo de abandono y para qué sirve?">
+            El modelo Random Forest analizó el historial de {total} clientes (reclamos, antigüedad, uso de datos, etc.)
+            y calculó la probabilidad de que cada uno abandone el servicio.
+            El resultado permite al equipo comercial <strong>priorizar acciones</strong>: llamar primero a los ALTO,
+            ofrecer descuentos a los MEDIO, y solo monitorear a los BAJO — en vez de contactar a todos por igual.
           </InfoBox>
-
           <div className="res__two-col" style={{ alignItems: 'stretch', marginBottom: '1.5rem' }}>
             <div className="res__card">
-              <h3 className="res__card-title">Distribución por segmento de riesgo</h3>
+              <h3 className="res__card-title">Distribución por segmento</h3>
               <div className="res__chart-wrap">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={riskPieData} cx="50%" cy="48%" innerRadius="45%" outerRadius="70%" paddingAngle={3} dataKey="value">
-                      {riskPieData.map((entry, i) => (
-                        <Cell key={i} fill={entry.fill} stroke="transparent" />
-                      ))}
+                      {riskPieData.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="transparent" />)}
                     </Pie>
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, n) => [`${v} clientes (${total ? ((v/total)*100).toFixed(1) : 0}%)`, n]} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '0.78rem', color: C.muted }} />
@@ -243,19 +280,19 @@ function TabResumen({ provData, solData, ordData, ejecData, scoreadosData }) {
               <article className="res__risk-card res__risk-card--alto">
                 <strong>{alto}</strong>
                 <span>Riesgo ALTO</span>
-                <small>Prob. ≥ 60% · Contacto prioritario inmediato</small>
+                <small>Prob. ≥ 60% · Acción: contacto prioritario inmediato</small>
                 <div className="res__risk-bar" style={{ width: `${total ? (alto/total)*100 : 0}%` }} />
               </article>
               <article className="res__risk-card res__risk-card--medio">
                 <strong>{medio}</strong>
                 <span>Riesgo MEDIO</span>
-                <small>Prob. 35–60% · Campaña de fidelización</small>
+                <small>Prob. 35–60% · Acción: campaña de fidelización</small>
                 <div className="res__risk-bar" style={{ width: `${total ? (medio/total)*100 : 0}%` }} />
               </article>
               <article className="res__risk-card res__risk-card--bajo">
                 <strong>{bajo}</strong>
                 <span>Riesgo BAJO</span>
-                <small>Prob. {'<'} 35% · Monitoreo estándar</small>
+                <small>Prob. {'<'} 35% · Acción: monitoreo estándar</small>
                 <div className="res__risk-bar" style={{ width: `${total ? (bajo/total)*100 : 0}%` }} />
               </article>
             </div>
@@ -263,6 +300,7 @@ function TabResumen({ provData, solData, ordData, ejecData, scoreadosData }) {
         </>
       )}
 
+      {/* Operaciones */}
       <div className="res__two-col">
         <div className="res__card">
           <h3 className="res__card-title">Proveedores por estado</h3>
@@ -282,7 +320,6 @@ function TabResumen({ provData, solData, ordData, ejecData, scoreadosData }) {
             </div>
           ) : <p className="res__empty">Sin proveedores registrados.</p>}
         </div>
-
         <div className="res__card">
           <h3 className="res__card-title">Solicitudes por estado</h3>
           {estadoSols.length > 0 ? (
@@ -334,8 +371,9 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
       <div className="res__empty-state">
         <p className="res__empty-title">Sin predicciones todavía</p>
         <p className="res__empty-desc">
-          Ejecuta el pipeline de EntrenamientoAI para poblar la tabla <code>clientes_scoreados</code> en Neon.
-          El modelo Random Forest (optimizado) scoreará los clientes automáticamente.
+          Ejecuta el pipeline de EntrenamientoAI (Render Cron Job) para poblar la tabla{' '}
+          <code>clientes_scoreados</code> en Neon. El modelo Random Forest scoreará cada cliente
+          automáticamente y los resultados aparecerán aquí.
         </p>
       </div>
     )
@@ -362,17 +400,31 @@ function TabPredicciones({ scoreadosData, scoreadosError, scoreadosLoading }) {
 
   return (
     <div>
-      <div className="res__stat-grid" style={{ marginBottom: '1.2rem' }}>
-        <StatCard label="Total scoreados" value={total} sub="clientes evaluados" accent="blue" />
-        <StatCard label="Riesgo ALTO" value={alto} sub={`${((alto/total)*100).toFixed(1)}% del total`} accent="danger" />
-        <StatCard label="Riesgo MEDIO" value={medio} sub={`${((medio/total)*100).toFixed(1)}% del total`} accent="amber" />
-        <StatCard label="Riesgo BAJO" value={bajo} sub={`${((bajo/total)*100).toFixed(1)}% del total`} accent="green" />
+      {/* Banner de propósito */}
+      <div className="res__purpose-banner">
+        <div className="res__purpose-icon">🎯</div>
+        <div>
+          <strong>¿Para qué sirven estas predicciones?</strong>
+          <p>
+            El modelo Random Forest analizó <strong>{total} clientes</strong> y calculó la probabilidad de que cada uno abandone el servicio.
+            El objetivo es que el equipo comercial pueda <strong>actuar antes de que el cliente se vaya</strong>:
+            contactar urgente a los de riesgo ALTO, ofrecer beneficios a los MEDIO, y solo observar a los BAJO.
+            Sin IA, este análisis tomaría semanas y se haría de forma subjetiva.
+          </p>
+        </div>
       </div>
 
-      <InfoBox title="¿Qué es la probabilidad de abandono?">
-        Es la certeza que tiene el modelo de que un cliente dejará el servicio en los próximos meses.
-        Se expresa de 0 a 100%: valores altos indican mayor urgencia de contacto.
-        La <strong>acción de retención</strong> sugerida es la estrategia recomendada según el perfil del cliente.
+      <div className="res__stat-grid" style={{ marginBottom: '1.2rem' }}>
+        <StatCard label="Total evaluados" value={total} sub="clientes analizados por el modelo" accent="blue" />
+        <StatCard label="Riesgo ALTO" value={alto} sub={`${((alto/total)*100).toFixed(1)}% — contactar hoy`} accent="danger" />
+        <StatCard label="Riesgo MEDIO" value={medio} sub={`${((medio/total)*100).toFixed(1)}% — fidelizar`} accent="amber" />
+        <StatCard label="Riesgo BAJO" value={bajo} sub={`${((bajo/total)*100).toFixed(1)}% — monitorear`} accent="green" />
+      </div>
+
+      <InfoBox title="¿Qué significa la columna 'Prob. abandono'?">
+        Es el porcentaje de certeza del modelo: un cliente con 78% tiene 78 de cada 100 probabilidades
+        de irse según su historial. La <strong>columna Acción recomendada</strong> ya traduce esa probabilidad
+        en una acción concreta (llamada, descuento, programa de lealtad, etc.).
       </InfoBox>
 
       <div className="res__two-col" style={{ marginBottom: '1.5rem' }}>
@@ -918,7 +970,7 @@ function ResultadosSection() {
           </nav>
 
           <div className="resultados-section__content">
-            {tab === 'resumen'      && <TabResumen provData={provData} solData={solData} ordData={ordData} ejecData={ejecData} scoreadosData={scoreadosData} />}
+            {tab === 'resumen'      && <TabResumen provData={provData} solData={solData} ordData={ordData} ejecData={ejecData} scoreadosData={scoreadosData} mlData={mlData} />}
             {tab === 'predicciones' && <TabPredicciones scoreadosData={scoreadosData} scoreadosError={scoreadosError} scoreadosLoading={scoreadosLoading} />}
             {tab === 'ml'           && <TabMl mlData={mlData} mlError={mlError} mlLoading={mlLoading} />}
             {tab === 'kpis'         && <TabKpis kpiData={kpiData} kpiError={kpiError} kpiLoading={kpiLoading} />}

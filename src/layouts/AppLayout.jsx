@@ -9,8 +9,6 @@ const appLinks = [
   ['Proveedores', '/app/proveedores'],
   ['Solicitudes', '/app/solicitudes'],
   ['Cotizaciones', '/app/cotizaciones'],
-  ['Pipelines', '/app/pipelines'],
-  ['Pipeline IA', '/app/ia'],
   ['Resultados', '/app/resultados'],
 ]
 

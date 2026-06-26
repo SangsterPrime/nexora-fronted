@@ -22,8 +22,8 @@ function App() {
           <Route path="/app/proveedores" element={<ProtectedRoute><Proveedores /></ProtectedRoute>} />
           <Route path="/app/solicitudes" element={<ProtectedRoute><Solicitudes /></ProtectedRoute>} />
           <Route path="/app/cotizaciones" element={<ProtectedRoute><Cotizaciones /></ProtectedRoute>} />
-          <Route path="/app/pipelines" element={<ProtectedRoute><Pipelines /></ProtectedRoute>} />
-          <Route path="/app/ia" element={<ProtectedRoute><Ia /></ProtectedRoute>} />
+          <Route path="/app/pipelines" element={<Navigate to="/app/resultados" replace />} />
+          <Route path="/app/ia" element={<Navigate to="/app/resultados" replace />} />
           <Route path="/app/resultados" element={<ProtectedRoute><Resultados /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
