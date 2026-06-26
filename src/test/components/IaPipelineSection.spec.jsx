@@ -21,16 +21,16 @@ const cronMetrics = {
  * Construye un fetch falso que responde por endpoint /api/ml/*.
  * `overrides` permite cambiar la respuesta de train/score por test.
  */
-function mockMlFetch({ healthMode = 'CRON', train, score } = {}) {
+function mockMlFetch({ healthMode = 'CRON', health, metrics = cronMetrics, predictions, train, score } = {}) {
   spyOn(window, 'fetch').and.callFake((url) => {
     if (url.includes('/api/ml/health')) {
-      return jsonResponse({ status: 'UP', mode: healthMode, model: 'XGBoost' })
+      return jsonResponse(health || { status: 'UP', mode: healthMode, model: 'XGBoost' })
     }
     if (url.includes('/api/ml/metrics')) {
-      return jsonResponse(cronMetrics)
+      return jsonResponse(metrics)
     }
     if (url.includes('/api/ml/predictions')) {
-      return jsonResponse({ content: [], totalElements: 0 })
+      return jsonResponse(predictions || { content: [], totalElements: 0 })
     }
     if (url.includes('/api/ml/train')) {
       return train ? train() : jsonResponse({ mode: 'CRON' }, { ok: false, status: 409 })
@@ -115,5 +115,80 @@ describe('IaPipelineSection (modo Cron Job)', () => {
     expect(screen.getByRole('button', { name: 'Verificar servicio IA' })).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Actualizar métricas' })).not.toBeNull()
     expect(screen.getAllByRole('button', { name: 'Actualizar predicciones' }).length).toBeGreaterThan(0)
+  })
+
+  it('lee predicciones y total desde la respuesta real del backend', async () => {
+    mockMlFetch({
+      healthMode: 'CRON',
+      predictions: {
+        status: 'OK',
+        total: 2,
+        predicciones: [
+          { id: 'P-1', score: 0.8123, probabilidad: 0.81, resultado: 'APROBADO' },
+          { id: 'P-2', score: 0.4012, probabilidad: 0.4, resultado: 'RECHAZADO' },
+        ],
+      },
+    })
+    renderWithAuth(<IaPipelineSection />)
+
+    await waitFor(() => {
+      expect(screen.getByText('2 resultados')).not.toBeNull()
+    })
+    expect(screen.getByText('P-1')).not.toBeNull()
+    expect(screen.getByText('0.8123')).not.toBeNull()
+    expect(screen.getByText('81.00%')).not.toBeNull()
+    expect(screen.getByText('APROBADO')).not.toBeNull()
+  })
+
+  it('lee la matriz de confusión desde matriz_confusion', async () => {
+    mockMlFetch({
+      healthMode: 'CRON',
+      metrics: {
+        accuracy: 0.92,
+        recall: 0.88,
+        precision: 0.9,
+        f1: 0.89,
+        roc_auc: 0.95,
+        gini: 0.9,
+        matriz_confusion: [[120, 8], [10, 95]],
+        timestamp: '2026-06-20T10:00:00Z',
+        modelo: 'XGBoost',
+      },
+    })
+    const { container } = renderWithAuth(<IaPipelineSection />)
+
+    await waitFor(() => {
+      expect(screen.getByText('95.00%')).not.toBeNull()
+    })
+    expect(container.querySelector('.ia-pipeline__matrix')).not.toBeNull()
+    const cells = Array.from(container.querySelectorAll('.ia-pipeline__matrix-cell'))
+      .map((cell) => cell.textContent)
+    expect(cells).toContain('TN120')
+    expect(cells).toContain('FP8')
+    expect(cells).toContain('FN10')
+    expect(cells).toContain('TP95')
+  })
+
+  it('usa ultimaEjecucion de /health cuando metrics no trae timestamp', async () => {
+    mockMlFetch({
+      health: { status: 'UP', mode: 'CRON', model: 'XGBoost', ultimaEjecucion: '2026-06-25T11:22:33Z' },
+      metrics: {
+        accuracy: 0.92,
+        recall: 0.88,
+        precision: 0.9,
+        f1: 0.89,
+        roc_auc: 0.95,
+        gini: 0.9,
+        matriz_confusion: [[120, 8], [10, 95]],
+        modeloSeleccionado: 'XGBoost Cron',
+        fuente: 'Neon PostgreSQL',
+      },
+    })
+    renderWithAuth(<IaPipelineSection />)
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0)
+    })
+    expect(screen.getByText('XGBoost Cron')).not.toBeNull()
   })
 })

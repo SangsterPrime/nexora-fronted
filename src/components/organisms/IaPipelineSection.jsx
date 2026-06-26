@@ -89,7 +89,7 @@ function formatMetric(value) {
 
 function getConfusionMatrix(data) {
   const root = getMetricsRoot(data)
-  const raw = root.confusionMatrix || root.confusion_matrix || root.matrix
+  const raw = root.confusionMatrix || root.confusion_matrix || root.matriz_confusion || root.matrizConfusion || root.matrix
 
   if (Array.isArray(raw) && raw.length === 2 && Array.isArray(raw[0]) && Array.isArray(raw[1])) {
     const [tn, fp] = raw[0]
@@ -97,10 +97,11 @@ function getConfusionMatrix(data) {
     return { tn: Number(tn), fp: Number(fp), fn: Number(fn), tp: Number(tp) }
   }
 
-  const tn = pickNumber(root, ['tn', 'trueNegatives', 'true_negatives'])
-  const fp = pickNumber(root, ['fp', 'falsePositives', 'false_positives'])
-  const fn = pickNumber(root, ['fn', 'falseNegatives', 'false_negatives'])
-  const tp = pickNumber(root, ['tp', 'truePositives', 'true_positives'])
+  const matrixRoot = raw && typeof raw === 'object' ? raw : root
+  const tn = pickNumber(matrixRoot, ['tn', 'trueNegatives', 'true_negatives'])
+  const fp = pickNumber(matrixRoot, ['fp', 'falsePositives', 'false_positives'])
+  const fn = pickNumber(matrixRoot, ['fn', 'falseNegatives', 'false_negatives'])
+  const tp = pickNumber(matrixRoot, ['tp', 'truePositives', 'true_positives'])
 
   if ([tn, fp, fn, tp].some((cell) => cell === null)) {
     return null
@@ -192,15 +193,26 @@ function getDurationLabel(root) {
   return null
 }
 
-function getLastRunInfo(metricsData) {
+function getLastRunInfo(metricsData, healthData) {
   const root = getMetricsRoot(metricsData)
+  const healthRoot = healthData && typeof healthData === 'object' ? healthData : {}
   const timestamp =
-    root.lastRun || root.last_run || root.lastTrainedAt || root.trainedAt || root.executedAt || root.updatedAt || root.timestamp
+    root.timestamp ||
+    root.lastRun ||
+    root.last_run ||
+    root.lastTrainedAt ||
+    root.trainedAt ||
+    root.executedAt ||
+    root.updatedAt ||
+    healthRoot.ultimaEjecucion ||
+    healthRoot.ultima_ejecucion ||
+    healthRoot.lastRun ||
+    healthRoot.timestamp
   const version = root.modelVersion || root.model_version || root.version
-  const model = root.model || root.modelName || root.model_name || root.selectedModel || root.modelo || root.algorithm
+  const model = root.modelo || root.model || root.modelName || root.model_name || root.modeloSeleccionado || root.selectedModel || root.algorithm
   const samples = pickNumber(root, ['samples', 'rows', 'nSamples', 'datasetSize'])
   const duration = getDurationLabel(root)
-  const source = root.source || root.dataSource || root.origin || 'Neon PostgreSQL'
+  const source = root.fuente || root.source || root.dataSource || root.origin || 'Neon PostgreSQL'
 
   return { timestamp: timestamp || null, version: version || null, model: model || null, samples, duration, source }
 }
@@ -227,6 +239,9 @@ function getPredictionRows(data) {
   }
   if (Array.isArray(data?.content)) {
     return data.content
+  }
+  if (Array.isArray(data?.predicciones)) {
+    return data.predicciones
   }
   if (Array.isArray(data?.predictions)) {
     return data.predictions
@@ -289,15 +304,14 @@ function IaPipelineSection() {
   const busy = verifying || training || scoring || refreshingMetrics || refreshingPredictions
   const healthInfo = getHealthInfo(health.data)
   const matrix = getConfusionMatrix(metrics.data)
-  const lastRun = getLastRunInfo(metrics.data)
+  const lastRun = getLastRunInfo(metrics.data, health.data)
   const predictionRows = getPredictionRows(predictions.data)
   const metricsRoot = getMetricsRoot(metrics.data)
   const metricsLoading = metrics.loading
   const metricsError = metrics.error
 
-  const predictionsTotal = typeof predictions.data?.totalElements === 'number'
-    ? predictions.data.totalElements
-    : predictionRows.length
+  const parsedPredictionsTotal = pickNumber(predictions.data, ['totalElements', 'total'])
+  const predictionsTotal = parsedPredictionsTotal ?? predictionRows.length
   const metricsAvailable = METRIC_CARDS.some((card) => pickNumber(metricsRoot, card.keys) !== null) || Boolean(matrix)
 
   // El modo viene de /health; si /train o /score reportan cron, lo recordamos.
