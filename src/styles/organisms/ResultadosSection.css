@@ -439,3 +439,59 @@
 .res__muted  { color: rgba(245,245,240,0.32); font-size: 0.76rem; }
 .res__danger { color: #f87171; font-weight: 700; }
 .res__note   { margin: 0.8rem 0 0; font-size: 0.76rem; color: rgba(245,245,240,0.38); }
+
+/* ── Chart wrappers ─────────────────────────────────────────────────────────── */
+
+.res__chart-wrap     { width: 100%; height: 220px; }
+.res__chart-wrap--sm { height: 180px; }
+.res__chart-wrap--md { height: 240px; }
+
+.res__chart-note {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
+  color: rgba(245,245,240,0.38);
+  line-height: 1.5;
+}
+
+/* ── Info box (explanation card) ─────────────────────────────────────────────── */
+
+.res__info-box {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1.2rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(129,140,248,0.15);
+  background: rgba(129,140,248,0.05);
+}
+
+.res__info-icon { flex-shrink: 0; color: #818cf8; font-size: 1rem; margin-top: 0.1rem; }
+
+.res__info-box strong {
+  display: block;
+  color: rgba(245,245,240,0.85);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.res__info-box p { margin: 0; color: rgba(245,245,240,0.5); font-size: 0.79rem; line-height: 1.6; }
+
+/* ── Glossary grid ──────────────────────────────────────────────────────────── */
+
+.res__glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem 1.2rem; }
+.res__glossary-grid--single { grid-template-columns: 1fr; }
+@media (max-width: 640px) { .res__glossary-grid { grid-template-columns: 1fr; } }
+
+.res__glossary-item { display: flex; gap: 0.7rem; align-items: flex-start; }
+
+.res__glossary-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; margin-top: 0.45rem; }
+
+.res__glossary-item strong { display: block; color: rgba(245,245,240,0.8); font-size: 0.79rem; font-weight: 700; margin-bottom: 0.2rem; }
+.res__glossary-item p { margin: 0; color: rgba(245,245,240,0.42); font-size: 0.75rem; line-height: 1.55; }
+
+/* ── Risk grid col variant (vertical stack) ──────────────────────────────────── */
+
+.res__risk-grid--col { grid-template-columns: 1fr; align-content: stretch; }
+.res__risk-grid--col .res__risk-card { flex: 1; }
